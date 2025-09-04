@@ -58,8 +58,9 @@
             <p class="subtitle">比較 ChatGPT, Gemini, Perplexity 的經節分析</p>
             <p class="subtitle">因為呼叫 API 需要費用，目前採用是性價比較高的模型，不是最佳模型，AI 解經若有偏差，請多包容</p>
         </header>
+
         <section class="settings-section">
-            <span class="settings-toggle" onclick="toggleSettings()">▶ 點此設定您的 API Keys (必需)</span>
+            <span class="settings-toggle">▶ 點此設定您的 API Keys (必需)</span>
             <div class="api-keys" id="api-keys-container">
                 <p>您的 Key 只會儲存在您的瀏覽器中，不會上傳到任何伺服器。</p>
                 <div class="form-group"><label for="openai-key">OpenAI API Key (sk-proj-...)</label><input type="password" id="openai-key" placeholder="sk-proj-..."></div>
@@ -67,208 +68,51 @@
                 <div class="form-group"><label for="perplexity-key">Perplexity API Key</label><input type="password" id="perplexity-key" placeholder="pplx-..."></div>
             </div>
         </section>
+
         <form id="bible-form" class="form-section">
-            <div class="form-group"><label>選擇經節範圍</label><div class="selectors-grid"><select id="book-select" required></select><select id="chapter-select" required></select><select id="verse-start-select" required></select><select id="verse-end-select" required></select></div></div>
-            <div class="form-group"><label>選擇要查詢的 AI 模型</label><div class="models"><div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div><div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Flash</label></div><div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity</label></div></div></div>
-            <button type="submit" id="submit-btn">開始解經</button>
-        </form>
-        <div id="results-container"></div>
-    </main>
-<script>
-    const bibleStructureData=[{"book_name":"創世記","chapters":[{"c":1,"v":31},{"c":2,"v":25},...]},/* ... 完整的聖經結構資料 ... */];
-    // --- 完整的聖經資料和JS程式碼 ---
-    // 為了簡潔，這裡省略了完整的 bibleStructureData 和 JS，但它們在下面的完整腳本中
-</script>
-<script>
-// **完整的JS程式碼，確保所有功能正常**
-const fullBibleData=[{"book_name":"創世記","chapters":[{"c":1,"v":31},{"c":2,"v":25},{"c":3,"v":24},{"c":4,"v":26},{"c":5,"v":32},{"c":6,"v":22},{"c":7,"v":24},{"c":8,"v":22},{"c":9,"v":29},{"c":10,"v":32},{"c":11,"v":32},{"c":12,"v":20},{"c":13,"v":18},{"c":14,"v":24},{"c":15,"v":21},{"c":16,"v":16},{"c":17,"v":27},{"c":18,"v":33},{"c":19,"v":38},{"c":20,"v":18},{"c":21,"v":34},{"c":22,"v":24},{"c":23,"v":20},{"c":24,"v":67},{"c":25,"v":34},{"c":26,"v":35},{"c":27,"v":46},{"c":28,"v":22},{"c":29,"v":35},{"c":30,"v":43},{"c":31,"v":55},{"c":32,"v":32},{"c":33,"v":20},{"c":34,"v":31},{"c":35,"v":29},{"c":36,"v":43},{"c":37,"v":36},{"c":38,"v":30},{"c":39,"v":23},{"c":40,"v":23},{"c":41,"v":57},{"c":42,"v":38},{"c":43,"v":34},{"c":44,"v":34},{"c":45,"v":28},{"c":46,"v":34},{"c":47,"v":31},{"c":48,"v":22},{"c":49,"v":33},{"c":50,"v":26}]},{"book_name":"出埃及記","chapters":[{"c":1,"v":22},{"c":2,"v":25},{"c":3,"v":22},{"c":4,"v":31},...]},/*... 此處省略大量聖經數據以保持簡潔，但下方指令稿中是完整的 ...*/];
-const bookSelect = document.getElementById('book-select');
-const chapterSelect = document.getElementById('chapter-select');
-// ... 和之前版本一樣的完整JS程式碼
-</script>
-
-<!-- 為了讓您方便複製，我把完整的程式碼放在一個可折疊的區塊中 -->
-<details>
-  <summary>點此展開並複製完整的 GitHub Pages 程式碼</summary>
-  <pre><code>
-&lt;!DOCTYPE html&gt;
-&lt;html lang="zh-Hant"&gt;
-&lt;head&gt;
-    &lt;meta charset="UTF-8"&gt;
-    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
-    &lt;title&gt;多AI專業解經系統&lt;/title&gt;
-    &lt;script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"&gt;&lt;/script&gt;
-    &lt;style&gt;
-        :root {
-            --bg-color: #121212; --text-color: #e0e0e0; --primary-color: #007bff;
-            --card-bg: #1e1e1e; --border-color: #333; --input-bg: #2a2a2a;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 1rem; line-height: 1.6;
-        }
-        main { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-        header { text-align: center; }
-        h1 { color: var(--primary-color); margin-bottom: 0.5rem; }
-        p.subtitle { color: #aaa; font-style: italic; margin-top: 0; }
-        .settings-section, .form-section {
-            background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;
-        }
-        .settings-toggle { cursor: pointer; font-weight: bold; color: var(--primary-color); margin-bottom: 1rem; display: block; }
-        .api-keys { display: none; }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-        input[type="password"], select {
-            width: 100%; padding: 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color);
-            border-radius: 4px; color: var(--text-color); font-size: 1rem; box-sizing: border-box;
-        }
-        .selectors-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
-        .models { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-        .model-checkbox { display: flex; align-items: center; gap: 0.5rem; }
-        input[type="checkbox"] { width: 1.5em; height: 1.5em; }
-        button {
-            width: 100%; padding: 1rem; background-color: var(--primary-color); color: white; border: none;
-            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease;
-        }
-        button:disabled { background-color: #555; cursor: not-allowed; }
-        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
-        .result-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
-        .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
-        .result-card.error h2 { color: #f44336; }
-        .content-body { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 1rem; }
-        .content-body h1, .content-body h2, .content-body h3 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; margin-top: 1.5em; }
-        .content-body ul, .content-body ol { padding-left: 2em; }
-        .content-body li { margin-bottom: 0.5em; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    &lt;/style&gt;
-&lt;/head&gt;
-&lt;body&gt;
-    &lt;main&gt;
-        &lt;header&gt;
-            &lt;h1&gt;多AI專業解經系統&lt;/h1&gt;
-            &lt;p class="subtitle"&gt;比較 ChatGPT, Gemini, Perplexity 的經節分析&lt;/p&gt;
-            &lt;p class="subtitle"&gt;因為呼叫 API 需要費用，目前採用是性價比較高的模型，不是最佳模型，AI 解經若有偏差，請多包容&lt;/p&gt;
-        &lt;/header&gt;
-        &lt;section class="settings-section"&gt;
-            &lt;span class="settings-toggle" onclick="toggleSettings()"&gt;▶ 點此設定您的 API Keys (必需)&lt;/span&gt;
-            &lt;div class="api-keys" id="api-keys-container"&gt;
-                &lt;p&gt;您的 Key 只會儲存在您的瀏覽器中，不會上傳到任何伺服器。&lt;/p&gt;
-                &lt;div class="form-group"&gt;&lt;label for="openai-key"&gt;OpenAI API Key (sk-proj-...)&lt;/label&gt;&lt;input type="password" id="openai-key" placeholder="sk-proj-..."&gt;&lt;/div&gt;
-                &lt;div class="form-group"&gt;&lt;label for="gemini-key"&gt;Google AI API Key&lt;/label&gt;&lt;input type="password" id="gemini-key" placeholder="AIzaSy..."&gt;&lt;/div&gt;
-                &lt;div class="form-group"&gt;&lt;label for="perplexity-key"&gt;Perplexity API Key&lt;/label&gt;&lt;input type="password" id="perplexity-key" placeholder="pplx-..."&gt;&lt;/div&gt;
-            &lt;/div&gt;
-        &lt;/section&gt;
-        &lt;form id="bible-form" class="form-section"&gt;
-            &lt;div class="form-group"&gt;&lt;label&gt;選擇經節範圍&lt;/label&gt;&lt;div class="selectors-grid"&gt;&lt;select id="book-select" required&gt;&lt;/select&gt;&lt;select id="chapter-select" required&gt;&lt;/select&gt;&lt;select id="verse-start-select" required&gt;&lt;/select&gt;&lt;select id="verse-end-select" required&gt;&lt;/select&gt;&lt;/div&gt;&lt;/div&gt;
-            &lt;div class="form-group"&gt;&lt;label&gt;選擇要查詢的 AI 模型&lt;/label&gt;&lt;div class="models"&gt;&lt;div class="model-checkbox"&gt;&lt;input type="checkbox" id="use-chatgpt" value="chatgpt" checked&gt;&lt;label for="use-chatgpt"&gt;ChatGPT 5 Nano&lt;/label&gt;&lt;/div&gt;&lt;div class="model-checkbox"&gt;&lt;input type="checkbox" id="use-gemini" value="gemini" checked&gt;&lt;label for="use-gemini"&gt;Gemini 2.5 Flash&lt;/label&gt;&lt;/div&gt;&lt;div class="model-checkbox"&gt;&lt;input type="checkbox" id="use-perplexity" value="perplexity" checked&gt;&lt;label for="use-perplexity"&gt;Perplexity&lt;/label&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
-            &lt;button type="submit" id="submit-btn"&gt;開始解經&lt;/button&gt;
-        &lt;/form&gt;
-        &lt;div id="results-container"&gt;&lt;/div&gt;
-    &lt;/main&gt;
-&lt;script&gt;
-const bibleStructureData=[{"book_name":"創世記","chapters":[{"c":1,"v":31},{"c":2,"v":25},{"c":3,"v":24},...]}, /* 完整數據 */];
-const bookSelect = document.getElementById('book-select');
-// ... 完整 JS
-&lt;/script&gt;
-  </code></pre>
-</details>
-
-```html
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多AI專業解經系統</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #121212; --text-color: #e0e0e0; --primary-color: #007bff;
-            --card-bg: #1e1e1e; --border-color: #333; --input-bg: #2a2a2a;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 1rem; line-height: 1.6;
-        }
-        main { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
-        header { text-align: center; }
-        h1 { color: var(--primary-color); margin-bottom: 0.5rem; }
-        p.subtitle { color: #aaa; font-style: italic; margin-top: 0; }
-        .settings-section, .form-section {
-            background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;
-        }
-        .settings-toggle { cursor: pointer; font-weight: bold; color: var(--primary-color); margin-bottom: 1rem; display: block; }
-        .api-keys { display: none; }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-        input[type="password"], select {
-            width: 100%; padding: 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color);
-            border-radius: 4px; color: var(--text-color); font-size: 1rem; box-sizing: border-box;
-        }
-        .selectors-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
-        .models { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-        .model-checkbox { display: flex; align-items: center; gap: 0.5rem; }
-        input[type="checkbox"] { width: 1.5em; height: 1.5em; }
-        button {
-            width: 100%; padding: 1rem; background-color: var(--primary-color); color: white; border: none;
-            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease;
-        }
-        button:disabled { background-color: #555; cursor: not-allowed; }
-        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
-        .result-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
-        .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
-        .result-card.error h2 { color: #f44336; }
-        .content-body { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 1rem; }
-        .content-body h1, .content-body h2, .content-body h3 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; margin-top: 1.5em; }
-        .content-body ul, .content-body ol { padding-left: 2em; }
-        .content-body li { margin-bottom: 0.5em; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-    <main>
-        <header>
-            <h1>多AI專業解經系統</h1>
-            <p class="subtitle">比較 ChatGPT, Gemini, Perplexity 的經節分析</p>
-            <p class="subtitle">因為呼叫 API 需要費用，目前採用是性價比較高的模型，不是最佳模型，AI 解經若有偏差，請多包容</p>
-        </header>
-        <section class="settings-section">
-            <span class="settings-toggle" onclick="toggleSettings()">▶ 點此設定您的 API Keys (必需)</span>
-            <div class="api-keys" id="api-keys-container">
-                <p>您的 Key 只會儲存在您的瀏覽器中，不會上傳到任何伺服器。</p>
-                <div class="form-group"><label for="openai-key">OpenAI API Key (sk-proj-...)</label><input type="password" id="openai-key" placeholder="sk-proj-..."></div>
-                <div class="form-group"><label for="gemini-key">Google AI API Key</label><input type="password" id="gemini-key" placeholder="AIzaSy..."></div>
-                <div class="form-group"><label for="perplexity-key">Perplexity API Key</label><input type="password" id="perplexity-key" placeholder="pplx-..."></div>
+            <div class="form-group">
+                <label>選擇經節範圍</label>
+                <div class="selectors-grid">
+                    <select id="book-select" required></select>
+                    <select id="chapter-select" required></select>
+                    <select id="verse-start-select" required></select>
+                    <select id="verse-end-select" required></select>
+                </div>
             </div>
-        </section>
-        <form id="bible-form" class="form-section">
-            <div class="form-group"><label>選擇經節範圍</label><div class="selectors-grid"><select id="book-select" required></select><select id="chapter-select" required></select><select id="verse-start-select" required></select><select id="verse-end-select" required></select></div></div>
-            <div class="form-group"><label>選擇要查詢的 AI 模型</label><div class="models"><div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div><div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Flash</label></div><div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity</label></div></div></div>
+            
+            <div class="form-group">
+                <label>選擇要查詢的 AI 模型</label>
+                <div class="models">
+                    <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Flash</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity</label></div>
+                </div>
+            </div>
+
             <button type="submit" id="submit-btn">開始解經</button>
         </form>
+
         <div id="results-container"></div>
     </main>
+
 <script>
+    // **單一、乾淨的腳本區塊**
     const bibleStructureData=[{"book_name":"創世記","chapters":[{"c":1,"v":31},{"c":2,"v":25},{"c":3,"v":24},{"c":4,"v":26},{"c":5,"v":32},{"c":6,"v":22},{"c":7,"v":24},{"c":8,"v":22},{"c":9,"v":29},{"c":10,"v":32},{"c":11,"v":32},{"c":12,"v":20},{"c":13,"v":18},{"c":14,"v":24},{"c":15,"v":21},{"c":16,"v":16},{"c":17,"v":27},{"c":18,"v":33},{"c":19,"v":38},{"c":20,"v":18},{"c":21,"v":34},{"c":22,"v":24},{"c":23,"v":20},{"c":24,"v":67},{"c":25,"v":34},{"c":26,"v":35},{"c":27,"v":46},{"c":28,"v":22},{"c":29,"v":35},{"c":30,"v":43},{"c":31,"v":55},{"c":32,"v":32},{"c":33,"v":20},{"c":34,"v":31},{"c":35,"v":29},{"c":36,"v":43},{"c":37,"v":36},{"c":38,"v":30},{"c":39,"v":23},{"c":40,"v":23},{"c":41,"v":57},{"c":42,"v":38},{"c":43,"v":34},{"c":44,"v":34},{"c":45,"v":28},{"c":46,"v":34},{"c":47,"v":31},{"c":48,"v":22},{"c":49,"v":33},{"c":50,"v":26}]},{"book_name":"出埃及記","chapters":[{"c":1,"v":22},{"c":2,"v":25},{"c":3,"v":22},{"c":4,"v":31},{"c":5,"v":23},{"c":6,"v":30},{"c":7,"v":25},{"c":8,"v":32},{"c":9,"v":35},{"c":10,"v":29},{"c":11,"v":10},{"c":12,"v":51},{"c":13,"v":22},{"c":14,"v":31},{"c":15,"v":27},{"c":16,"v":36},{"c":17,"v":16},{"c":18,"v":27},{"c":19,"v":25},{"c":20,"v":26},{"c":21,"v":36},{"c":22,"v":31},{"c":23,"v":33},{"c":24,"v":18},{"c":25,"v":40},{"c":26,"v":37},{"c":27,"v":21},{"c":28,"v":43},{"c":29,"v":46},{"c":30,"v":38},{"c":31,"v":18},{"c":32,"v":35},{"c":33,"v":23},{"c":34,"v":35},{"c":35,"v":35},{"c":36,"v":38},{"c":37,"v":29},{"c":38,"v":31},{"c":39,"v":43},{"c":40,"v":38}]},{"book_name":"利未記","chapters":[{"c":1,"v":17},{"c":2,"v":16},{"c":3,"v":17},{"c":4,"v":35},{"c":5,"v":19},{"c":6,"v":30},{"c":7,"v":38},{"c":8,"v":36},{"c":9,"v":24},{"c":10,"v":20},{"c":11,"v":47},{"c":12,"v":8},{"c":13,"v":59},{"c":14,"v":57},{"c":15,"v":33},{"c":16,"v":34},{"c":17,"v":16},{"c":18,"v":30},{"c":19,"v":37},{"c":20,"v":27},{"c":21,"v":24},{"c":22,"v":33},{"c":23,"v":44},{"c":24,"v":23},{"c":25,"v":55},{"c":26,"v":46},{"c":27,"v":34}]},{"book_name":"民數記","chapters":[{"c":1,"v":54},{"c":2,"v":34},{"c":3,"v":51},{"c":4,"v":49},{"c":5,"v":31},{"c":6,"v":27},{"c":7,"v":89},{"c":8,"v":26},{"c":9,"v":23},{"c":10,"v":36},{"c":11,"v":35},{"c":12,"v":16},{"c":13,"v":33},{"c":14,"v":45},{"c":15,"v":41},{"c":16,"v":50},{"c":17,"v":13},{"c":18,"v":32},{"c":19,"v":22},{"c":20,"v":29},{"c":21,"v":35},{"c":22,"v":41},{"c":23,"v":30},{"c":24,"v":25},{"c":25,"v":18},{"c":26,"v":65},{"c":27,"v":23},{"c":28,"v":31},{"c":29,"v":40},{"c":30,"v":16},{"c":31,"v":54},{"c":32,"v":42},{"c":33,"v":56},{"c":34,"v":29},{"c":35,"v":34},{"c":36,"v":13}]},{"book_name":"申命記","chapters":[{"c":1,"v":46},{"c":2,"v":37},{"c":3,"v":29},{"c":4,"v":49},{"c":5,"v":33},{"c":6,"v":25},{"c":7,"v":26},{"c":8,"v":20},{"c":9,"v":29},{"c":10,"v":22},{"c":11,"v":32},{"c":12,"v":32},{"c":13,"v":18},{"c":14,"v":29},{"c":15,"v":23},{"c":16,"v":22},{"c":17,"v":20},{"c":18,"v":22},{"c":19,"v":21},{"c":20,"v":20},{"c":21,"v":23},{"c":22,"v":30},{"c":23,"v":25},{"c":24,"v":22},{"c":25,"v":19},{"c":26,"v":19},{"c":27,"v":26},{"c":28,"v":68},{"c":29,"v":29},{"c":30,"v":20},{"c":31,"v":30},{"c":32,"v":52},{"c":33,"v":29},{"c":34,"v":12}]},{"book_name":"約書亞記","chapters":[{"c":1,"v":18},{"c":2,"v":24},{"c":3,"v":17},{"c":4,"v":24},{"c":5,"v":15},{"c":6,"v":27},{"c":7,"v":26},{"c":8,"v":35},{"c":9,"v":27},{"c":10,"v":43},{"c":11,"v":23},{"c":12,"v":24},{"c":13,"v":33},{"c":14,"v":15},{"c":15,"v":63},{"c":16,"v":10},{"c":17,"v":18},{"c":18,"v":28},{"c":19,"v":51},{"c":20,"v":9},{"c":21,"v":45},{"c":22,"v":34},{"c":23,"v":16},{"c":24,"v":33}]},{"book_name":"士師記","chapters":[{"c":1,"v":36},{"c":2,"v":23},{"c":3,"v":31},{"c":4,"v":24},{"c":5,"v":31},{"c":6,"v":40},{"c":7,"v":25},{"c":8,"v":35},{"c":9,"v":57},{"c":10,"v":18},{"c":11,"v":40},{"c":12,"v":15},{"c":13,"v":25},{"c":14,"v":20},{"c":15,"v":20},{"c":16,"v":31},{"c":17,"v":13},{"c":18,"v":31},{"c":19,"v":30},{"c":20,"v":48},{"c":21,"v":25}]},{"book_name":"路得記","chapters":[{"c":1,"v":22},{"c":2,"v":23},{"c":3,"v":18},{"c":4,"v":22}]},{"book_name":"撒母耳記上","chapters":[{"c":1,"v":28},{"c":2,"v":36},{"c":3,"v":21},{"c":4,"v":22},{"c":5,"v":12},{"c":6,"v":21},{"c":7,"v":17},{"c":8,"v":22},{"c":9,"v":27},{"c":10,"v":27},{"c":11,"v":15},{"c":12,"v":25},{"c":13,"v":23},{"c":14,"v":52},{"c":15,"v":35},{"c":16,"v":23},{"c":17,"v":58},{"c":18,"v":30},{"c":19,"v":24},{"c":20,"v":42},{"c":21,"v":15},{"c":22,"v":23},{"c":23,"v":29},{"c":24,"v":22},{"c":25,"v":44},{"c":26,"v":25},{"c":27,"v":12},{"c":28,"v":25},{"c":29,"v":11},{"c":30,"v":31},{"c":31,"v":13}]},{"book_name":"撒母耳記下","chapters":[{"c":1,"v":27},{"c":2,"v":32},{"c":3,"v":39},{"c":4,"v":12},{"c":5,"v":25},{"c":6,"v":23},{"c":7,"v":29},{"c":8,"v":18},{"c":9,"v":13},{"c":10,"v":19},{"c":11,"v":27},{"c":12,"v":31},{"c":13,"v":39},{"c":14,"v":33},{"c":15,"v":37},{"c":16,"v":23},{"c":17,"v":29},{"c":18,"v":33},{"c":19,"v":43},{"c":20,"v":26},{"c":21,"v":22},{"c":22,"v":51},{"c":23,"v":39},{"c":24,"v":25}]},{"book_name":"列王紀上","chapters":[{"c":1,"v":53},{"c":2,"v":46},{"c":3,"v":28},{"c":4,"v":34},{"c":5,"v":18},{"c":6,"v":38},{"c":7,"v":51},{"c":8,"v":66},{"c":9,"v":28},{"c":10,"v":29},{"c":11,"v":43},{"c":12,"v":33},{"c":13,"v":34},{"c":14,"v":31},{"c":15,"v":34},{"c":16,"v":34},{"c":17,"v":24},{"c":18,"v":46},{"c":19,"v":21},{"c":20,"v":43},{"c":21,"v":29},{"c":22,"v":53}]},{"book_name":"列王紀下","chapters":[{"c":1,"v":18},{"c":2,"v":25},{"c":3,"v":27},{"c":4,"v":44},{"c":5,"v":27},{"c":6,"v":33},{"c":7,"v":20},{"c":8,"v":29},{"c":9,"v":37},{"c":10,"v":36},{"c":11,"v":21},{"c":12,"v":21},{"c":13,"v":25},{"c":14,"v":29},{"c":15,"v":38},{"c":16,"v":20},{"c":17,"v":41},{"c":18,"v":37},{"c":19,"v":37},{"c":20,"v":21},{"c":21,"v":26},{"c":22,"v":20},{"c":23,"v":37},{"c":24,"v":20},{"c":25,"v":30}]},{"book_name":"歷代志上","chapters":[{"c":1,"v":54},{"c":2,"v":55},{"c":3,"v":24},{"c":4,"v":43},{"c":5,"v":26},{"c":6,"v":81},{"c":7,"v":40},{"c":8,"v":40},{"c":9,"v":44},{"c":10,"v":14},{"c":11,"v":47},{"c":12,"v":40},{"c":13,"v":14},{"c":14,"v":17},{"c":15,"v":29},{"c":16,"v":43},{"c":17,"v":27},{"c":18,"v":17},{"c":19,"v":19},{"c":20,"v":8},{"c":21,"v":30},{"c":22,"v":19},{"c":23,"v":32},{"c":24,"v":31},{"c":25,"v":31},{"c":26,"v":32},{"c":27,"v":34},{"c":28,"v":21},{"c":29,"v":30}]},{"book_name":"歷代志下","chapters":[{"c":1,"v":17},{"c":2,"v":18},{"c":3,"v":17},{"c":4,"v":22},{"c":5,"v":14},{"c":6,"v":42},{"c":7,"v":22},{"c":8,"v":18},{"c":9,"v":31},{"c":10,"v":19},{"c":11,"v":23},{"c":12,"v":16},{"c":13,"v":22},{"c":14,"v":15},{"c":15,"v":19},{"c":16,"v":14},{"c":17,"v":19},{"c":18,"v":34},{"c":19,"v":11},{"c":20,"v":37},{"c":21,"v":20},{"c":22,"v":12},{"c":23,"v":21},{"c":24,"v":27},{"c":25,"v":28},{"c":26,"v":23},{"c":27,"v":9},{"c":28,"v":27},{"c":29,"v":36},{"c":30,"v":27},{"c":31,"v":21},{"c":32,"v":33},{"c":33,"v":25},{"c":34,"v":33},{"c":35,"v":27},{"c":36,"v":23}]},{"book_name":"以斯拉記","chapters":[{"c":1,"v":11},{"c":2,"v":70},{"c":3,"v":13},{"c":4,"v":24},{"c":5,"v":17},{"c":6,"v":22},{"c":7,"v":28},{"c":8,"v":36},{"c":9,"v":15},{"c":10,"v":44}]},{"book_name":"尼希米記","chapters":[{"c":1,"v":11},{"c":2,"v":20},{"c":3,"v":32},{"c":4,"v":23},{"c":5,"v":19},{"c":6,"v":19},{"c":7,"v":73},{"c":8,"v":18},{"c":9,"v":38},{"c":10,"v":39},{"c":11,"v":36},{"c":12,"v":47},{"c":13,"v":31}]},{"book_name":"以斯帖記","chapters":[{"c":1,"v":22},{"c":2,"v":23},{"c":3,"v":15},{"c":4,"v":17},{"c":5,"v":14},{"c":6,"v":14},{"c":7,"v":10},{"c":8,"v":17},{"c":9,"v":32},{"c":10,"v":3}]},{"book_name":"約伯記","chapters":[{"c":1,"v":22},{"c":2,"v":13},{"c":3,"v":26},{"c":4,"v":21},{"c":5,"v":27},{"c":6,"v":30},{"c":7,"v":21},{"c":8,"v":22},{"c":9,"v":35},{"c":10,"v":22},{"c":11,"v":20},{"c":12,"v":25},{"c":13,"v":28},{"c":14,"v":22},{"c":15,"v":35},{"c":16,"v":22},{"c":17,"v":16},{"c":18,"v":21},{"c":19,"v":29},{"c":20,"v":29},{"c":21,"v":34},{"c":22,"v":30},{"c":23,"v":17},{"c":24,"v":25},{"c":25,"v":6},{"c":26,"v":14},{"c":27,"v":23},{"c":28,"v":28},{"c":29,"v":25},{"c":30,"v":31},{"c":31,"v":40},{"c":32,"v":22},{"c":33,"v":33},{"c":34,"v":37},{"c":35,"v":16},{"c":36,"v":33},{"c":37,"v":24},{"c":38,"v":41},{"c":39,"v":30},{"c":40,"v":24},{"c":41,"v":34},{"c":42,"v":17}]},{"book_name":"詩篇","chapters":[{"c":1,"v":6},{"c":2,"v":12},{"c":3,"v":8},{"c":4,"v":8},{"c":5,"v":12},{"c":6,"v":10},{"c":7,"v":17},{"c":8,"v":9},{"c":9,"v":20},{"c":10,"v":18},{"c":11,"v":7},{"c":12,"v":8},{"c":13,"v":6},{"c":14,"v":7},{"c":15,"v":5},{"c":16,"v":11},{"c":17,"v":15},{"c":18,"v":50},{"c":19,"v":14},{"c":20,"v":9},{"c":21,"v":13},{"c":22,"v":31},{"c":23,"v":6},{"c":24,"v":10},{"c":25,"v":22},{"c":26,"v":12},{"c":27,"v":14},{"c":28,"v":9},{"c":29,"v":11},{"c":30,"v":12},{"c":31,"v":24},{"c":32,"v":11},{"c":33,"v":22},{"c":34,"v":22},{"c":35,"v":28},{"c":36,"v":12},{"c":37,"v":40},{"c":38,"v":22},{"c":39,"v":13},{"c":40,"v":17},{"c":41,"v":13},{"c":42,"v":11},{"c":43,"v":5},{"c":44,"v":26},{"c":45,"v":17},{"c":46,"v":11},{"c":47,"v":9},{"c":48,"v":14},{"c":49,"v":20},{"c":50,"v":23},{"c":51,"v":19},{"c":52,"v":9},{"c":53,"v":6},{"c":54,"v":7},{"c":55,"v":23},{"c":56,"v":13},{"c":57,"v":11},{"c":58,"v":11},{"c":59,"v":17},{"c":60,"v":12},{"c":61,"v":8},{"c":62,"v":12},{"c":63,"v":11},{"c":64,"v":10},{"c":65,"v":13},{"c":66,"v":20},{"c":67,"v":7},{"c":68,"v":35},{"c":69,"v":36},{"c":70,"v":5},{"c":71,"v":24},{"c":72,"v":20},{"c":73,"v":28},{"c":74,"v":23},{"c":75,"v":10},{"c":76,"v":12},{"c":77,"v":20},{"c":78,"v":72},{"c":79,"v":13},{"c":80,"v":19},{"c":81,"v":16},{"c":82,"v":8},{"c":83,"v":18},{"c":84,"v":12},{"c":85,"v":13},{"c":86,"v":17},{"c":87,"v":7},{"c":88,"v":18},{"c":89,"v":52},{"c":90,"v":17},{"c":91,"v":16},{"c":92,"v":15},{"c":93,"v":5},{"c":94,"v":23},{"c":95,"v":11},{"c":96,"v":13},{"c":97,"v":12},{"c":98,"v":9},{"c":99,"v":9},{"c":100,"v":5},{"c":101,"v":8},{"c":102,"v":28},{"c":103,"v":22},{"c":104,"v":35},{"c":105,"v":45},{"c":106,"v":48},{"c":107,"v":43},{"c":108,"v":13},{"c":109,"v":31},{"c":110,"v":7},{"c":111,"v":10},{"c":112,"v":10},{"c":113,"v":9},{"c":114,"v":8},{"c":115,"v":18},{"c":116,"v":19},{"c":117,"v":2},{"c":118,"v":29},{"c":119,"v":176},{"c":120,"v":7},{"c":121,"v":8},{"c":122,"v":9},{"c":123,"v":4},{"c":124,"v":8},{"c":125,"v":5},{"c":126,"v":6},{"c":127,"v":5},{"c":128,"v":6},{"c":129,"v":8},{"c":130,"v":8},{"c":131,"v":3},{"c":132,"v":18},{"c":133,"v":3},{"c":134,"v":3},{"c":135,"v":21},{"c":136,"v":26},{"c":137,"v":9},{"c":138,"v":8},{"c":139,"v":24},{"c":140,"v":13},{"c":141,"v":10},{"c":142,"v":7},{"c":143,"v":12},{"c":144,"v":15},{"c":145,"v":21},{"c":146,"v":10},{"c":147,"v":20},{"c":148,"v":14},{"c":149,"v":9},{"c":150,"v":6}]},{"book_name":"箴言","chapters":[{"c":1,"v":33},{"c":2,"v":22},{"c":3,"v":35},{"c":4,"v":27},{"c":5,"v":23},{"c":6,"v":35},{"c":7,"v":27},{"c":8,"v":36},{"c":9,"v":18},{"c":10,"v":32},{"c":11,"v":31},{"c":12,"v":28},{"c":13,"v":25},{"c":14,"v":35},{"c":15,"v":33},{"c":16,"v":33},{"c":17,"v":28},{"c":18,"v":24},{"c":19,"v":29},{"c":20,"v":30},{"c":21,"v":31},{"c":22,"v":29},{"c":23,"v":35},{"c":24,"v":34},{"c":25,"v":28},{"c":26,"v":28},{"c":27,"v":27},{"c":28,"v":28},{"c":29,"v":27},{"c":30,"v":33},{"c":31,"v":31}]},{"book_name":"傳道書","chapters":[{"c":1,"v":18},{"c":2,"v":26},{"c":3,"v":22},{"c":4,"v":16},{"c":5,"v":20},{"c":6,"v":12},{"c":7,"v":29},{"c":8,"v":17},{"c":9,"v":18},{"c":10,"v":20},{"c":11,"v":10},{"c":12,"v":14}]},{"book_name":"雅歌","chapters":[{"c":1,"v":17},{"c":2,"v":17},{"c":3,"v":11},{"c":4,"v":16},{"c":5,"v":16},{"c":6,"v":13},{"c":7,"v":13},{"c":8,"v":14}]},{"book_name":"以賽亞書","chapters":[{"c":1,"v":31},{"c":2,"v":22},{"c":3,"v":26},{"c":4,"v":6},{"c":5,"v":30},{"c":6,"v":13},{"c":7,"v":25},{"c":8,"v":22},{"c":9,"v":21},{"c":10,"v":34},{"c":11,"v":16},{"c":12,"v":6},{"c":13,"v":22},{"c":14,"v":32},{"c":15,"v":9},{"c":16,"v":14},{"c":17,"v":14},{"c":18,"v":7},{"c":19,"v":25},{"c":20,"v":6},{"c":21,"v":17},{"c":22,"v":25},{"c":23,"v":18},{"c":24,"v":23},{"c":25,"v":12},{"c":26,"v":21},{"c":27,"v":13},{"c":28,"v":29},{"c":29,"v":24},{"c":30,"v":33},{"c":31,"v":9},{"c":32,"v":20},{"c":33,"v":24},{"c":34,"v":17},{"c":35,"v":10},{"c":36,"v":22},{"c":37,"v":38},{"c":38,"v":22},{"c":39,"v":8},{"c":40,"v":31},{"c":41,"v":29},{"c":42,"v":25},{"c":43,"v":28},{"c":44,"v":28},{"c":45,"v":25},{"c":46,"v":13},{"c":47,"v":15},{"c":48,"v":22},{"c":49,"v":26},{"c":50,"v":11},{"c":51,"v":23},{"c":52,"v":15},{"c":53,"v":12},{"c":54,"v":17},{"c":55,"v":13},{"c":56,"v":12},{"c":57,"v":21},{"c":58,"v":14},{"c":59,"v":21},{"c":60,"v":22},{"c":61,"v":11},{"c":62,"v":12},{"c":63,"v":19},{"c":64,"v":12},{"c":65,"v":25},{"c":66,"v":24}]},{"book_name":"耶利米書","chapters":[{"c":1,"v":19},{"c":2,"v":37},{"c":3,"v":25},{"c":4,"v":31},{"c":5,"v":31},{"c":6,"v":30},{"c":7,"v":34},{"c":8,"v":22},{"c":9,"v":26},{"c":10,"v":25},{"c":11,"v":23},{"c":12,"v":17},{"c":13,"v":27},{"c":14,"v":22},{"c":15,"v":21},{"c":16,"v":21},{"c":17,"v":27},{"c":18,"v":23},{"c":19,"v":15},{"c":20,"v":18},{"c":21,"v":14},{"c":22,"v":30},{"c":23,"v":40},{"c":24,"v":10},{"c":25,"v":38},{"c":26,"v":24},{"c":27,"v":22},{"c":28,"v":17},{"c":29,"v":32},{"c":30,"v":24},{"c":31,"v":40},{"c":32,"v":44},{"c":33,"v":26},{"c":34,"v":22},{"c":35,"v":19},{"c":36,"v":32},{"c":37,"v":21},{"c":38,"v":28},{"c":39,"v":18},{"c":40,"v":16},{"c":41,"v":18},{"c":42,"v":22},{"c":43,"v":13},{"c":44,"v":30},{"c":45,"v":5},{"c":46,"v":28},{"c":47,"v":7},{"c":48,"v":47},{"c":49,"v":39},{"c":50,"v":46},{"c":51,"v":64},{"c":52,"v":34}]},{"book_name":"耶利米哀歌","chapters":[{"c":1,"v":22},{"c":2,"v":22},{"c":3,"v":66},{"c":4,"v":22},{"c":5,"v":22}]},{"book_name":"以西結書","chapters":[{"c":1,"v":28},{"c":2,"v":10},{"c":3,"v":27},{"c":4,"v":17},{"c":5,"v":17},{"c":6,"v":14},{"c":7,"v":27},{"c":8,"v":18},{"c":9,"v":11},{"c":10,"v":22},{"c":11,"v":25},{"c":12,"v":28},{"c":13,"v":23},{"c":14,"v":23},{"c":15,"v":8},{"c":16,"v":63},{"c":17,"v":24},{"c":18,"v":32},{"c":19,"v":14},{"c":20,"v":49},{"c":21,"v":32},{"c":22,"v":31},{"c":23,"v":49},{"c":24,"v":27},{"c":25,"v":17},{"c":26,"v":21},{"c":27,"v":36},{"c":28,"v":26},{"c":29,"v":21},{"c":30,"v":26},{"c":31,"v":18},{"c":32,"v":32},{"c":33,"v":33},{"c":34,"v":31},{"c":35,"v":15},{"c":36,"v":38},{"c":37,"v":28},{"c":38,"v":23},{"c":39,"v":29},{"c":40,"v":49},{"c":41,"v":26},{"c":42,"v":20},{"c":43,"v":27},{"c":44,"v":31},{"c":45,"v":25},{"c":46,"v":24},{"c":47,"v":23},{"c":48,"v":35}]},{"book_name":"但以理書","chapters":[{"c":1,"v":21},{"c":2,"v":49},{"c":3,"v":30},{"c":4,"v":37},{"c":5,"v":31},{"c":6,"v":28},{"c":7,"v":28},{"c":8,"v":27},{"c":9,"v":27},{"c":10,"v":21},{"c":11,"v":45},{"c":12,"v":13}]},{"book_name":"何西阿書","chapters":[{"c":1,"v":11},{"c":2,"v":23},{"c":3,"v":5},{"c":4,"v":19},{"c":5,"v":15},{"c":6,"v":11},{"c":7,"v":16},{"c":8,"v":14},{"c":9,"v":17},{"c":10,"v":15},{"c":11,"v":12},{"c":12,"v":14},{"c":13,"v":16},{"c":14,"v":9}]},{"book_name":"約珥書","chapters":[{"c":1,"v":20},{"c":2,"v":32},{"c":3,"v":21}]},{"book_name":"阿摩司書","chapters":[{"c":1,"v":15},{"c":2,"v":16},{"c":3,"v":15},{"c":4,"v":13},{"c":5,"v":27},{"c":6,"v":14},{"c":7,"v":17},{"c":8,"v":14},{"c":9,"v":15}]},{"book_name":"俄巴底亞書","chapters":[{"c":1,"v":21}]},{"book_name":"約拿書","chapters":[{"c":1,"v":17},{"c":2,"v":10},{"c":3,"v":10},{"c":4,"v":11}]},{"book_name":"彌迦書","chapters":[{"c":1,"v":16},{"c":2,"v":13},{"c":3,"v":12},{"c":4,"v":13},{"c":5,"v":15},{"c":6,"v":16},{"c":7,"v":20}]},{"book_name":"那鴻書","chapters":[{"c":1,"v":15},{"c":2,"v":13},{"c":3,"v":19}]},{"book_name":"哈巴谷書","chapters":[{"c":1,"v":17},{"c":2,"v":20},{"c":3,"v":19}]},{"book_name":"西番雅書","chapters":[{"c":1,"v":18},{"c":2,"v":15},{"c":3,"v":20}]},{"book_name":"哈該書","chapters":[{"c":1,"v":15},{"c":2,"v":23}]},{"book_name":"撒迦利亞書","chapters":[{"c":1,"v":21},{"c":2,"v":13},{"c":3,"v":10},{"c":4,"v":14},{"c":5,"v":11},{"c":6,"v":15},{"c":7,"v":14},{"c":8,"v":23},{"c":9,"v":17},{"c":10,"v":12},{"c":11,"v":17},{"c":12,"v":14},{"c":13,"v":9},{"c":14,"v":21}]},{"book_name":"瑪拉基書","chapters":[{"c":1,"v":14},{"c":2,"v":17},{"c":3,"v":18},{"c":4,"v":6}]},{"book_name":"馬太福音","chapters":[{"c":1,"v":25},{"c":2,"v":23},{"c":3,"v":17},{"c":4,"v":25},{"c":5,"v":48},{"c":6,"v":34},{"c":7,"v":29},{"c":8,"v":34},{"c":9,"v":38},{"c":10,"v":42},{"c":11,"v":30},{"c":12,"v":50},{"c":13,"v":58},{"c":14,"v":36},{"c":15,"v":39},{"c":16,"v":28},{"c":17,"v":27},{"c":18,"v":35},{"c":19,"v":30},{"c":20,"v":34},{"c":21,"v":46},{"c":22,"v":46},{"c":23,"v":39},{"c":24,"v":51},{"c":25,"v":46},{"c":26,"v":75},{"c":27,"v":66},{"c":28,"v":20}]},{"book_name":"馬可福音","chapters":[{"c":1,"v":45},{"c":2,"v":28},{"c":3,"v":35},{"c":4,"v":41},{"c":5,"v":43},{"c":6,"v":56},{"c":7,"v":37},{"c":8,"v":38},{"c":9,"v":50},{"c":10,"v":52},{"c":11,"v":33},{"c":12,"v":44},{"c":13,"v":37},{"c":14,"v":72},{"c":15,"v":47},{"c":16,"v":20}]},{"book_name":"路加福音","chapters":[{"c":1,"v":80},{"c":2,"v":52},{"c":3,"v":38},{"c":4,"v":44},{"c":5,"v":39},{"c":6,"v":49},{"c":7,"v":50},{"c":8,"v":56},{"c":9,"v":62},{"c":10,"v":42},{"c":11,"v":54},{"c":12,"v":59},{"c":13,"v":35},{"c":14,"v":35},{"c":15,"v":32},{"c":16,"v":31},{"c":17,"v":37},{"c":18,"v":43},{"c":19,"v":48},{"c":20,"v":47},{"c":21,"v":38},{"c":22,"v":71},{"c":23,"v":56},{"c":24,"v":53}]},{"book_name":"約翰福音","chapters":[{"c":1,"v":51},{"c":2,"v":25},{"c":3,"v":36},{"c":4,"v":54},{"c":5,"v":47},{"c":6,"v":71},{"c":7,"v":53},{"c":8,"v":59},{"c":9,"v":41},{"c":10,"v":42},{"c":11,"v":57},{"c":12,"v":50},{"c":13,"v":38},{"c":14,"v":31},{"c":15,"v":27},{"c":16,"v":33},{"c":17,"v":26},{"c":18,"v":40},{"c":19,"v":42},{"c":20,"v":31},{"c":21,"v":25}]},{"book_name":"使徒行傳","chapters":[{"c":1,"v":26},{"c":2,"v":47},{"c":3,"v":26},{"c":4,"v":37},{"c":5,"v":42},{"c":6,"v":15},{"c":7,"v":60},{"c":8,"v":40},{"c":9,"v":43},{"c":10,"v":48},{"c":11,"v":30},{"c":12,"v":25},{"c":13,"v":52},{"c":14,"v":28},{"c":15,"v":41},{"c":16,"v":40},{"c":17,"v":34},{"c":18,"v":28},{"c":19,"v":41},{"c":20,"v":38},{"c":21,"v":40},{"c":22,"v":30},{"c":23,"v":35},{"c":24,"v":27},{"c":25,"v":27},{"c":26,"v":32},{"c":27,"v":44},{"c":28,"v":31}]},{"book_name":"羅馬書","chapters":[{"c":1,"v":32},{"c":2,"v":29},{"c":3,"v":31},{"c":4,"v":25},{"c":5,"v":21},{"c":6,"v":23},{"c":7,"v":25},{"c":8,"v":39},{"c":9,"v":33},{"c":10,"v":21},{"c":11,"v":36},{"c":12,"v":21},{"c":13,"v":14},{"c":14,"v":23},{"c":15,"v":33},{"c":16,"v":27}]},{"book_name":"哥林多前書","chapters":[{"c":1,"v":31},{"c":2,"v":16},{"c":3,"v":23},{"c":4,"v":21},{"c":5,"v":13},{"c":6,"v":20},{"c":7,"v":40},{"c":8,"v":13},{"c":9,"v":27},{"c":10,"v":33},{"c":11,"v":34},{"c":12,"v":31},{"c":13,"v":13},{"c":14,"v":40},{"c":15,"v":58},{"c":16,"v":24}]},{"book_name":"哥林多後書","chapters":[{"c":1,"v":24},{"c":2,"v":17},{"c":3,"v":18},{"c":4,"v":18},{"c":5,"v":21},{"c":6,"v":18},{"c":7,"v":16},{"c":8,"v":24},{"c":9,"v":15},{"c":10,"v":18},{"c":11,"v":33},{"c":12,"v":21},{"c":13,"v":14}]},{"book_name":"加拉太書","chapters":[{"c":1,"v":24},{"c":2,"v":21},{"c":3,"v":29},{"c":4,"v":31},{"c":5,"v":26},{"c":6,"v":18}]},{"book_name":"以弗所書","chapters":[{"c":1,"v":23},{"c":2,"v":22},{"c":3,"v":21},{"c":4,"v":32},{"c":5,"v":33},{"c":6,"v":24}]},{"book_name":"腓立比書","chapters":[{"c":1,"v":30},{"c":2,"v":30},{"c":3,"v":21},{"c":4,"v":23}]},{"book_name":"歌羅西書","chapters":[{"c":1,"v":29},{"c":2,"v":23},{"c":3,"v":25},{"c":4,"v":18}]},{"book_name":"帖撒羅尼迦前書","chapters":[{"c":1,"v":10},{"c":2,"v":20},{"c":3,"v":13},{"c":4,"v":18},{"c":5,"v":28}]},{"book_name":"帖撒羅尼迦後書","chapters":[{"c":1,"v":12},{"c":2,"v":17},{"c":3,"v":18}]},{"book_name":"提摩太前書","chapters":[{"c":1,"v":20},{"c":2,"v":15},{"c":3,"v":16},{"c":4,"v":16},{"c":5,"v":25},{"c":6,"v":21}]},{"book_name":"提摩太後書","chapters":[{"c":1,"v":18},{"c":2,"v":26},{"c":3,"v":17},{"c":4,"v":22}]},{"book_name":"提多書","chapters":[{"c":1,"v":16},{"c":2,"v":15},{"c":3,"v":15}]},{"book_name":"腓利門書","chapters":[{"c":1,"v":25}]},{"book_name":"希伯來書","chapters":[{"c":1,"v":14},{"c":2,"v":18},{"c":3,"v":19},{"c":4,"v":16},{"c":5,"v":14},{"c":6,"v":20},{"c":7,"v":28},{"c":8,"v":13},{"c":9,"v":28},{"c":10,"v":39},{"c":11,"v":40},{"c":12,"v":29},{"c":13,"v":25}]},{"book_name":"雅各書","chapters":[{"c":1,"v":27},{"c":2,"v":26},{"c":3,"v":18},{"c":4,"v":17},{"c":5,"v":20}]},{"book_name":"彼得前書","chapters":[{"c":1,"v":25},{"c":2,"v":25},{"c":3,"v":22},{"c":4,"v":19},{"c":5,"v":14}]},{"book_name":"彼得後書","chapters":[{"c":1,"v":21},{"c":2,"v":22},{"c":3,"v":18}]},{"book_name":"約翰一書","chapters":[{"c":1,"v":10},{"c":2,"v":29},{"c":3,"v":24},{"c":4,"v":21},{"c":5,"v":21}]},{"book_name":"約翰二書","chapters":[{"c":1,"v":13}]},{"book_name":"約翰三書","chapters":[{"c":1,"v":14}]},{"book_name":"猶大書","chapters":[{"c":1,"v":25}]},{"book_name":"啟示錄","chapters":[{"c":1,"v":20},{"c":2,"v":29},{"c":3,"v":22},{"c":4,"v":11},{"c":5,"v":14},{"c":6,"v":17},{"c":7,"v":17},{"c":8,"v":13},{"c":9,"v":21},{"c":10,"v":11},{"c":11,"v":19},{"c":12,"v":18},{"c":13,"v":18},{"c":14,"v":20},{"c":15,"v":8},{"c":16,"v":21},{"c":17,"v":18},{"c":18,"v":24},{"c":19,"v":21},{"c":20,"v":15},{"c":21,"v":27},{"c":22,"v":21}]}];
 
-    const bookSelect = container.querySelector('#book-select');
-    const chapterSelect = container.querySelector('#chapter-select');
-    const verseStartSelect = container.querySelector('#verse-start-select');
-    const verseEndSelect = container.querySelector('#verse-end-select');
-    const bibleForm = container.querySelector('#bible-form');
-    const resultsContainer = container.querySelector('#results-container');
-    const openAIKeyInput = container.querySelector('#openai-key');
-    const geminiKeyInput = container.querySelector('#gemini-key');
-    const perplexityKeyInput = container.querySelector('#perplexity-key');
-    const submitBtn = container.querySelector('#submit-btn');
+    const bookSelect = document.getElementById('book-select');
+    const chapterSelect = document.getElementById('chapter-select');
+    const verseStartSelect = document.getElementById('verse-start-select');
+    const verseEndSelect = document.getElementById('verse-end-select');
+    const bibleForm = document.getElementById('bible-form');
+    const resultsContainer = document.getElementById('results-container');
+    const openAIKeyInput = document.getElementById('openai-key');
+    const geminiKeyInput = document.getElementById('gemini-key');
+    const perplexityKeyInput = document.getElementById('perplexity-key');
+    const submitBtn = document.getElementById('submit-btn');
 
-    function populateBooks() { fullBibleData.forEach((book, index) => { const option = document.createElement('option'); option.value = index; option.textContent = book.book_name; bookSelect.appendChild(option); }); }
-    function populateChapters() { const bookIndex = bookSelect.value; const book = fullBibleData[bookIndex]; chapterSelect.innerHTML = ''; book.chapters.forEach((chapter, index) => { const option = document.createElement('option'); option.value = index; option.textContent = `第 ${chapter.c} 章`; chapterSelect.appendChild(option); }); }
-    function populateVerses() { const bookIndex = bookSelect.value; const chapterIndex = chapterSelect.value; if (!fullBibleData[bookIndex] || !fullBibleData[bookIndex].chapters[chapterIndex]) return; const verseCount = fullBibleData[bookIndex].chapters[chapterIndex].v; verseStartSelect.innerHTML = ''; verseEndSelect.innerHTML = ''; for (let i = 1; i <= verseCount; i++) { const optionStart = document.createElement('option'); optionStart.value = i; optionStart.textContent = `從 ${i} 節`; verseStartSelect.appendChild(optionStart); const optionEnd = document.createElement('option'); optionEnd.value = i; optionEnd.textContent = `到 ${i} 節`; verseEndSelect.appendChild(optionEnd); } verseEndSelect.value = verseCount; }
+    function populateBooks() { bibleStructureData.forEach((book, index) => { const option = document.createElement('option'); option.value = index; option.textContent = book.book_name; bookSelect.appendChild(option); }); }
+    function populateChapters() { const bookIndex = bookSelect.value; const book = bibleStructureData[bookIndex]; chapterSelect.innerHTML = ''; book.chapters.forEach((chapter, index) => { const option = document.createElement('option'); option.value = index; option.textContent = `第 ${chapter.c} 章`; chapterSelect.appendChild(option); }); }
+    function populateVerses() { const bookIndex = bookSelect.value; const chapterIndex = chapterSelect.value; if (!bibleStructureData[bookIndex] || !bibleStructureData[bookIndex].chapters[chapterIndex]) return; const verseCount = bibleStructureData[bookIndex].chapters[chapterIndex].v; verseStartSelect.innerHTML = ''; verseEndSelect.innerHTML = ''; for (let i = 1; i <= verseCount; i++) { const optionStart = document.createElement('option'); optionStart.value = i; optionStart.textContent = `從 ${i} 節`; verseStartSelect.appendChild(optionStart); const optionEnd = document.createElement('option'); optionEnd.value = i; optionEnd.textContent = `到 ${i} 節`; verseEndSelect.appendChild(optionEnd); } verseEndSelect.value = verseCount; }
     
     bookSelect.addEventListener('change', () => { populateChapters(); chapterSelect.dispatchEvent(new Event('change')); });
     chapterSelect.addEventListener('change', populateVerses);
@@ -281,12 +125,12 @@ const bookSelect = document.getElementById('book-select');
         const chapterIndex = parseInt(chapterSelect.value);
         const startVerse = parseInt(verseStartSelect.value);
         const endVerse = parseInt(verseEndSelect.value);
-        const bookName = fullBibleData[bookIndex].book_name;
-        const chapterNum = fullBibleData[bookIndex].chapters[chapterIndex].c;
+        const bookName = bibleStructureData[bookIndex].book_name;
+        const chapterNum = bibleStructureData[bookIndex].chapters[chapterIndex].c;
         const reference = startVerse === endVerse ? `${bookName} ${chapterNum}:${startVerse}` : `${bookName} ${chapterNum}:${startVerse}-${endVerse}`;
-        const useChatGPT = container.querySelector('#use-chatgpt').checked;
-        const useGemini = container.querySelector('#use-gemini').checked;
-        const usePerplexity = container.querySelector('#use-perplexity').checked;
+        const useChatGPT = document.getElementById('use-chatgpt').checked;
+        const useGemini = document.getElementById('use-gemini').checked;
+        const usePerplexity = document.getElementById('use-perplexity').checked;
         const openAIKey = openAIKeyInput.value;
         const geminiKey = geminiKeyInput.value;
         const perplexityKey = perplexityKeyInput.value;
@@ -307,27 +151,28 @@ const bookSelect = document.getElementById('book-select');
     function saveAPIKeys() { localStorage.setItem('openai_api_key', openAIKeyInput.value); localStorage.setItem('gemini_api_key', geminiKeyInput.value); localStorage.setItem('perplexity_api_key', perplexityKeyInput.value); }
     function loadAPIKeys() { openAIKeyInput.value = localStorage.getItem('openai_api_key') || ''; geminiKeyInput.value = localStorage.getItem('gemini_api_key') || ''; perplexityKeyInput.value = localStorage.getItem('perplexity_api_key') || ''; }
     
-    container.querySelector('.settings-toggle').addEventListener('click', function() {
-        const apiKeysContainer = container.querySelector('.api-keys');
+    function toggleSettings() {
+        const apiKeysContainer = document.getElementById('api-keys-container');
+        const toggle = document.querySelector('.settings-toggle');
         if (apiKeysContainer.style.display === "block") {
             apiKeysContainer.style.display = "none";
-            this.textContent = "▶ 點此設定您的 API Keys";
+            toggle.textContent = "▶ 點此設定您的 API Keys";
         } else {
             apiKeysContainer.style.display = "block";
-            this.textContent = "▼ 隱藏 API Keys 設定";
+            toggle.textContent = "▼ 隱藏 API Keys 設定";
         }
-    });
+    }
 
     function displayResult(modelName, content, isError = false) { const card = document.createElement('div'); card.className = 'result-card'; if (isError) { card.classList.add('error'); card.innerHTML = `<h2>${modelName} 的解經結果</h2><pre>${content}</pre>`; } else { card.innerHTML = `<h2>${modelName} 的解經結果</h2><div class="content-body">${marked.parse(content)}</div>`; } resultsContainer.appendChild(card); }
     async function callAPI(modelName, url, options, responseHandler) { try { const response = await fetch(url, options); if (!response.ok) { const errorData = await response.json(); const errorMessage = errorData.error?.message || JSON.stringify(errorData.error); throw new Error(`${modelName} API Error: ${errorMessage}`); } const data = await response.json(); return { model: modelName, content: responseHandler(data), isError: false }; } catch (error) { console.error(`${modelName} Error:`, error); if (error instanceof TypeError && error.message === 'Failed to fetch') { const detailedError = `查詢失敗：${error.message}。\n\n這通常是瀏覽器安全問題 (CORS) 或廣告攔截器導致的。\n\n【解決方案】:\n1. 停用廣告攔截器擴充功能。\n2. (推薦) 使用 VS Code 的 "Live Server" 擴充功能來運行此頁面。`; return { model: modelName, content: detailedError, isError: true }; } return { model: modelName, content: `查詢失敗：${error.message}`, isError: true }; } }
     async function callChatGPT(prompt, apiKey) { return callAPI('ChatGPT 5 Nano', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
     async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Flash', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
     async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "llama-3-sonar-large-32k-online", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content); }
-
+    
     // Initial load
     loadAPIKeys();
     populateBooks();
     bookSelect.dispatchEvent(new Event('change'));
-});
 </script>
-<!-- End of Bible AI App for Blogger -->
+</body>
+</html>
