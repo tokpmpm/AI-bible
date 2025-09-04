@@ -1,0 +1,5 @@
+window.APP_CONFIG = {
+  OPENAI_API_KEY: '',
+  GEMINI_API_KEY: '',
+  PERPLEXITY_API_KEY: ''
+};
