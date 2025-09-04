@@ -4,7 +4,17 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main  # 或者您的主要分支，例如 master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -12,7 +22,7 @@ jobs:
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
-
+        
       - name: Create config.js from Secrets 🤫
         run: |
           echo "window.APP_CONFIG = {" > config.js
@@ -20,8 +30,14 @@ jobs:
           echo "  GEMINI_API_KEY: '${{ secrets.VITE_GEMINI_API_KEY }}'," >> config.js
           echo "  PERPLEXITY_API_KEY: '${{ secrets.VITE_PERPLEXITY_API_KEY }}'" >> config.js
           echo "};" >> config.js
-
-      - name: Deploy to GitHub Pages 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: . # Deploy the root folder
+          path: '.'
+          
+      - name: Deploy to GitHub Pages 🚀
+        uses: actions/deploy-pages@v4
