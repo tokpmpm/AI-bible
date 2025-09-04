@@ -1,0 +1,27 @@
+# deploy.yml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # 或者您的主要分支，例如 master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Create config.js from Secrets 🤫
+        run: |
+          echo "window.APP_CONFIG = {" > config.js
+          echo "  OPENAI_API_KEY: '${{ secrets.VITE_OPENAI_API_KEY }}'," >> config.js
+          echo "  GEMINI_API_KEY: '${{ secrets.VITE_GEMINI_API_KEY }}'," >> config.js
+          echo "  PERPLEXITY_API_KEY: '${{ secrets.VITE_PERPLEXITY_API_KEY }}'" >> config.js
+          echo "};" >> config.js
+
+      - name: Deploy to GitHub Pages 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: . # Deploy the root folder
