@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
@@ -73,7 +73,7 @@
                 <div class="models">
                     <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div>
                     <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Flash</label></div>
-                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar</label></div>
                 </div>
             </div>
 
@@ -89,10 +89,7 @@
     <script src="bible-data.js" defer></script>
 
     <script>
-    // **單一、乾淨的腳本區塊，確保所有功能在 DOM 載入後才執行**
     document.addEventListener('DOMContentLoaded', function() {
-        // bibleStructureData 現在由外部 bible-data.js 檔案提供
-
         const bookSelect = document.getElementById('book-select');
         const chapterSelect = document.getElementById('chapter-select');
         const verseStartSelect = document.getElementById('verse-start-select');
@@ -101,16 +98,98 @@
         const resultsContainer = document.getElementById('results-container');
         const submitBtn = document.getElementById('submit-btn');
 
-        function populateBooks() { bibleStructureData.forEach((book, index) => { const option = document.createElement('option'); option.value = index; option.textContent = book.book_name; bookSelect.appendChild(option); }); }
-        function populateChapters() { const bookIndex = bookSelect.value; const book = bibleStructureData[bookIndex]; chapterSelect.innerHTML = ''; book.chapters.forEach((chapter, index) => { const option = document.createElement('option'); option.value = index; option.textContent = `第 ${chapter.c} 章`; chapterSelect.appendChild(option); }); }
-        function populateVerses() { const bookIndex = bookSelect.value; const chapterIndex = chapterSelect.value; if (!bibleStructureData[bookIndex] || !bibleStructureData[bookIndex].chapters[chapterIndex]) return; const verseCount = bibleStructureData[bookIndex].chapters[chapterIndex].v; verseStartSelect.innerHTML = ''; verseEndSelect.innerHTML = ''; for (let i = 1; i <= verseCount; i++) { const optionStart = document.createElement('option'); optionStart.value = i; optionStart.textContent = `從 ${i} 節`; verseStartSelect.appendChild(optionStart); const optionEnd = document.createElement('option'); optionEnd.value = i; optionEnd.textContent = `到 ${i} 節`; verseEndSelect.appendChild(optionEnd); } verseEndSelect.value = verseCount; }
+        function populateBooks() {
+            bibleStructureData.forEach((book, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = book.book_name;
+                bookSelect.appendChild(option);
+            });
+        }
+
+        function populateChapters() {
+            const bookIndex = bookSelect.value;
+            const book = bibleStructureData[bookIndex];
+            chapterSelect.innerHTML = '';
+            book.chapters.forEach((chapter, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `第 ${chapter.c} 章`;
+                chapterSelect.appendChild(option);
+            });
+        }
+
+        function populateVerses() {
+            const bookIndex = bookSelect.value;
+            const chapterIndex = chapterSelect.value;
+            if (!bibleStructureData[bookIndex] || !bibleStructureData[bookIndex].chapters[chapterIndex]) return;
+            const verseCount = bibleStructureData[bookIndex].chapters[chapterIndex].v;
+            verseStartSelect.innerHTML = '';
+            verseEndSelect.innerHTML = '';
+            for (let i = 1; i <= verseCount; i++) {
+                const optionStart = document.createElement('option');
+                optionStart.value = i;
+                optionStart.textContent = `從 ${i} 節`;
+                verseStartSelect.appendChild(optionStart);
+                const optionEnd = document.createElement('option');
+                optionEnd.value = i;
+                optionEnd.textContent = `到 ${i} 節`;
+                verseEndSelect.appendChild(optionEnd);
+            }
+            verseEndSelect.value = verseCount;
+        }
         
-        bookSelect.addEventListener('change', () => { populateChapters(); chapterSelect.dispatchEvent(new Event('change')); });
+        // --- 新增功能：儲存與讀取上次選擇 ---
+        function saveLastSelection() {
+            localStorage.setItem('selectedBook', bookSelect.value);
+            localStorage.setItem('selectedChapter', chapterSelect.value);
+            localStorage.setItem('selectedVerseStart', verseStartSelect.value);
+            localStorage.setItem('selectedVerseEnd', verseEndSelect.value);
+        }
+
+        function loadLastSelection() {
+            const savedBook = localStorage.getItem('selectedBook');
+            if (savedBook !== null) {
+                bookSelect.value = savedBook;
+                populateChapters(); // 根據儲存的書卷，填充章節
+
+                const savedChapter = localStorage.getItem('selectedChapter');
+                if (savedChapter !== null) {
+                    chapterSelect.value = savedChapter;
+                    populateVerses(); // 根據儲存的章節，填充節
+
+                    const savedVerseStart = localStorage.getItem('selectedVerseStart');
+                    const savedVerseEnd = localStorage.getItem('selectedVerseEnd');
+                    if (savedVerseStart !== null) verseStartSelect.value = savedVerseStart;
+                    if (savedVerseEnd !== null) verseEndSelect.value = savedVerseEnd;
+                } else {
+                    populateVerses(); // 如果只有書卷，則填充預設的章節
+                }
+            } else {
+                // 如果沒有任何儲存，則執行預設的初始化
+                populateChapters();
+                populateVerses();
+            }
+        }
+        // --- 功能結束 ---
+
+        bookSelect.addEventListener('change', () => {
+            populateChapters();
+            populateVerses();
+        });
         chapterSelect.addEventListener('change', populateVerses);
-        verseStartSelect.addEventListener('change', () => { const startVerse = parseInt(verseStartSelect.value); const endVerse = parseInt(verseEndSelect.value); if (endVerse < startVerse) { verseEndSelect.value = startVerse; } });
+        verseStartSelect.addEventListener('change', () => {
+            const startVerse = parseInt(verseStartSelect.value);
+            const endVerse = parseInt(verseEndSelect.value);
+            if (endVerse < startVerse) {
+                verseEndSelect.value = startVerse;
+            }
+        });
 
         bibleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            saveLastSelection(); // 在提交時儲存當前選擇
+            
             const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
             const openAIKey = ownerKeys.OPENAI_API_KEY;
             const geminiKey = ownerKeys.GEMINI_API_KEY;
@@ -128,9 +207,13 @@
             const useGemini = document.getElementById('use-gemini').checked;
             const usePerplexity = document.getElementById('use-perplexity').checked;
             
-            if (!useChatGPT && !useGemini && !usePerplexity) { alert('請至少選擇一個 AI 模型！'); return; }
+            if (!useChatGPT && !useGemini && !usePerplexity) {
+                alert('請至少選擇一個 AI 模型！');
+                return;
+            }
             
-            submitBtn.disabled = true; submitBtn.textContent = "正在解經中...";
+            submitBtn.disabled = true;
+            submitBtn.textContent = "正在解經中...";
             resultsContainer.innerHTML = '<div class="loader"></div>';
             
             const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
@@ -189,12 +272,15 @@
 
         async function callChatGPT(prompt, apiKey) { return callAPI('ChatGPT 5 Nano', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Flash', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
-        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content); }
+        // 更新 Perplexity 模型為 Sonar Reasoning (sonar-pro)
+        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content); }
         
-        // Initial load
+        // --- 修改後的初始化流程 ---
+        // 1. 先填充書卷
         populateBooks();
-        bookSelect.dispatchEvent(new Event('change'));
+        // 2. 嘗試讀取上次的選擇；如果沒有，則使用預設值填充章節
+        loadLastSelection();
     });
-</script>
+    </script>
 </body>
 </html>
