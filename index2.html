@@ -241,30 +241,15 @@
             let content = data.content;
             const sources = data.sources || [];
             
-            // 處理引用連結，讓數字引用變成可點擊的連結
-            if (sources.length > 0) {
-                content = content.replace(/\[(\d+)\]/g, (match, citationNumberStr) => {
-                    const citationNumber = parseInt(citationNumberStr, 10);
-                    const sourceIndex = citationNumber - 1;
-                    if (sourceIndex >= 0 && sourceIndex < sources.length) {
-                        const source = sources[sourceIndex];
-                        const url = source.url || '#';
-                        const title = source.title || `來源 ${citationNumber}`;
-                        return ` <a href="${url}" target="_blank" title="${title}"><sup>[${citationNumber}]</sup></a>`;
-                    }
-                    return match;
-                });
-            }
-            
             // 生成參考資料清單
             let sourcesHtml = '';
             if (sources.length > 0) {
-                sourcesHtml += '<div class="sources-list"><h3>📚 參考資料</h3><ol>';
-                sources.forEach(source => {
+                sourcesHtml += '<div class="sources-list"><h3>📚 參考資料來源</h3><ol>';
+                sources.forEach((source, index) => {
                     const url = source.url || '#';
                     const title = source.title || '未命名來源';
                     const domain = source.domain || '';
-                    sourcesHtml += `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>${domain ? ` <span class="source-domain">(${domain})</span>` : ''}</li>`;
+                    sourcesHtml += `<li><strong>[${index + 1}]</strong> <a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>${domain ? ` <span class="source-domain">(${domain})</span>` : ''}</li>`;
                 });
                 sourcesHtml += '</ol></div>';
             }
