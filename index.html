@@ -51,26 +51,9 @@
         .content-body .sources-list h3 { margin-top: 0; }
         .content-body .sources-list ol { padding-left: 1.5em; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
-        
-        /* --- 新增贊助按鈕樣式 --- */
-        .sponsorship-section {
-            margin: 1.5rem 0 0.5rem;
-        }
-        .bmc-button {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #FFDD00;
-            color: #000000;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-        .bmc-button:hover {
-            background-color: #FFE766;
-            transform: scale(1.05);
-        }
-        /* --- 樣式結束 --- */
+        .sponsorship-section { margin: 1.5rem 0 0.5rem; }
+        .bmc-button { display: inline-block; padding: 10px 20px; background-color: #FFDD00; color: #000000; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background-color 0.3s ease, transform 0.2s ease; }
+        .bmc-button:hover { background-color: #FFE766; transform: scale(1.05); }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -82,15 +65,11 @@
             <h1>多AI專業解經系統</h1>
             <p class="subtitle">比較 ChatGPT, Gemini, Perplexity 的經節分析</p>
             <p class="subtitle">因為呼叫 API 需要費用，目前採用是性價比較高的模型，不是最佳模型，AI 解經若有偏差，請多包容</p>
-            <p class="subtitle">如果費用用完而停用煩請通知我 tokpmpm1 at gmail.com</p>
-            <!-- --- 新增贊助區塊 --- -->
             <div class="sponsorship-section">
                 <a href="https://buymeacoffee.com/tokpmpm" target="_blank" class="bmc-button">
-                    ☕ 歡迎贊助，支持這個專案
+                    ☕ 請我喝杯咖啡，支持這個專案
                 </a>
             </div>
-            <!-- --- 區塊結束 --- -->
-
         </header>
 
         <form id="bible-form" class="form-section">
@@ -124,6 +103,10 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // --- 新增變數來記錄上次提交時間 ---
+        let lastSubmitTime = 0;
+        const SUBMIT_COOLDOWN = 20000; // 20秒冷卻時間
+
         const bookSelect = document.getElementById('book-select');
         const chapterSelect = document.getElementById('chapter-select');
         const verseStartSelect = document.getElementById('verse-start-select');
@@ -145,6 +128,15 @@
 
         bibleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // --- 新增速率限制檢查 ---
+            const currentTime = Date.now();
+            if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
+                alert('操作過於頻繁，請稍後再試。');
+                return; // 中止函式執行
+            }
+            // --- 檢查結束 ---
+
             saveLastSelection();
             
             const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
@@ -164,7 +156,10 @@
             
             if (!useChatGPT && !useGemini && !usePerplexity) { alert('請至少選擇一個 AI 模型！'); return; }
             
-            submitBtn.disabled = true; submitBtn.textContent = "正在解經中...";
+            // --- 如果檢查通過，則更新時間戳並執行後續操作 ---
+            lastSubmitTime = currentTime; 
+            submitBtn.disabled = true; 
+            submitBtn.textContent = "正在解經中...";
             resultsContainer.innerHTML = '<div class="loader"></div>';
             
             const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
