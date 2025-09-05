@@ -278,7 +278,26 @@
         
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
         
-        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message); }
+        async function callPerplexity(prompt, apiKey) { 
+            return callAPI('Perplexity Sonar', 'https://api.perplexity.ai/chat/completions', { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${apiKey}` 
+                }, 
+                body: JSON.stringify({ 
+                    model: "sonar-pro", 
+                    messages: [{ role: "user", content: prompt }] 
+                }) 
+            }, (data) => {
+                console.log('Perplexity API 完整回應:', data); // 除錯用
+                // 傳遞完整的 message 物件，包含可能的 sources
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message;
+                }
+                return data;
+            }); 
+        }
         
         populateBooks();
         loadLastSelection();
