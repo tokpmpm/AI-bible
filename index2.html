@@ -92,7 +92,7 @@
                 <div class="models">
                     <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div>
                     <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Pro</label></div>
-                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Reasoning</label></div>
                 </div>
             </div>
 
@@ -138,7 +138,7 @@
                         savedResults.forEach(result => {
                             if (result.isError) {
                                 displayResult(result.model, result.content, true);
-                            } else if (result.model === 'Perplexity Sonar') {
+                            } else if (result.model === 'Perplexity Sonar Reasoning') {
                                 displayPerplexityResult(result.content);
                             } else {
                                 displayResult(result.model, result.content, false);
@@ -215,7 +215,7 @@
             results.forEach(result => {
                 if (result.isError) {
                     displayResult(result.model, result.content, true);
-                } else if (result.model === 'Perplexity Sonar') {
+                } else if (result.model === 'Perplexity Sonar Reasoning') {
                     displayPerplexityResult(result.content);
                 } else {
                     displayResult(result.model, result.content, false);
@@ -257,7 +257,7 @@
             const card = document.createElement('div');
             card.className = 'result-card';
             const finalHtml = marked.parse(content) + sourcesHtml;
-            card.innerHTML = `<h2>Perplexity Sonar 的解經結果</h2><div class="content-body">${finalHtml}</div>`;
+            card.innerHTML = `<h2>Perplexity Sonar Reasoning 的解經結果</h2><div class="content-body">${finalHtml}</div>`;
             resultsContainer.appendChild(card);
         }
 
@@ -279,14 +279,14 @@
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
         
         async function callPerplexity(prompt, apiKey) { 
-            return callAPI('Perplexity Sonar', 'https://api.perplexity.ai/chat/completions', { 
+            return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { 
                 method: 'POST', 
                 headers: { 
                     'Content-Type': 'application/json', 
                     'Authorization': `Bearer ${apiKey}` 
                 }, 
                 body: JSON.stringify({ 
-                    model: "sonar-pro", 
+                    model: "sonar-reasoning", 
                     messages: [{ role: "user", content: prompt }] 
                 }) 
             }, (data) => {
