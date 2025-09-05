@@ -103,9 +103,8 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- 新增變數來記錄上次提交時間 ---
         let lastSubmitTime = 0;
-        const SUBMIT_COOLDOWN = 20000; // 20秒冷卻時間
+        const SUBMIT_COOLDOWN = 20000; // 20秒
 
         const bookSelect = document.getElementById('book-select');
         const chapterSelect = document.getElementById('chapter-select');
@@ -122,21 +121,42 @@
         function saveLastSelection() { localStorage.setItem('selectedBook', bookSelect.value); localStorage.setItem('selectedChapter', chapterSelect.value); localStorage.setItem('selectedVerseStart', verseStartSelect.value); localStorage.setItem('selectedVerseEnd', verseEndSelect.value); }
         function loadLastSelection() { const savedBook = localStorage.getItem('selectedBook'); if (savedBook !== null) { bookSelect.value = savedBook; populateChapters(); const savedChapter = localStorage.getItem('selectedChapter'); if (savedChapter !== null) { chapterSelect.value = savedChapter; populateVerses(); const savedVerseStart = localStorage.getItem('selectedVerseStart'); const savedVerseEnd = localStorage.getItem('selectedVerseEnd'); if (savedVerseStart !== null) verseStartSelect.value = savedVerseStart; if (savedVerseEnd !== null) verseEndSelect.value = savedVerseEnd; } else { populateVerses(); } } else { populateChapters(); populateVerses(); } }
 
+        // --- 新增功能：讀取並顯示上次結果 ---
+        function loadLastResults() {
+            const savedResultsJSON = localStorage.getItem('lastInterpretationResults');
+            if (savedResultsJSON) {
+                try {
+                    const savedResults = JSON.parse(savedResultsJSON);
+                    if (Array.isArray(savedResults) && savedResults.length > 0) {
+                        resultsContainer.innerHTML = ''; // 清空容器
+                        savedResults.forEach(result => {
+                            if (result.isError) {
+                                displayResult(result.model, result.content, true);
+                            } else if (result.model === 'Perplexity Sonar') {
+                                displayPerplexityResult(result.content);
+                            } else {
+                                displayResult(result.model, result.content, false);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error("無法解析儲存的解經結果:", error);
+                    localStorage.removeItem('lastInterpretationResults'); // 清除損壞的資料
+                }
+            }
+        }
+        
         bookSelect.addEventListener('change', () => { populateChapters(); populateVerses(); });
         chapterSelect.addEventListener('change', populateVerses);
         verseStartSelect.addEventListener('change', () => { const startVerse = parseInt(verseStartSelect.value); const endVerse = parseInt(verseEndSelect.value); if (endVerse < startVerse) { verseEndSelect.value = startVerse; } });
 
         bibleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
-            // --- 新增速率限制檢查 ---
             const currentTime = Date.now();
             if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
                 alert('操作過於頻繁，請稍後再試。');
-                return; // 中止函式執行
+                return;
             }
-            // --- 檢查結束 ---
-
             saveLastSelection();
             
             const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
@@ -156,7 +176,6 @@
             
             if (!useChatGPT && !useGemini && !usePerplexity) { alert('請至少選擇一個 AI 模型！'); return; }
             
-            // --- 如果檢查通過，則更新時間戳並執行後續操作 ---
             lastSubmitTime = currentTime; 
             submitBtn.disabled = true; 
             submitBtn.textContent = "正在解經中...";
@@ -176,8 +195,19 @@
             }
 
             const results = await Promise.all(promises);
-            resultsContainer.innerHTML = '';
             
+            // --- 新增功能：儲存結果到 localStorage ---
+            try {
+                // 只儲存成功的結果
+                const successfulResults = results.filter(r => !r.isError);
+                if (successfulResults.length > 0) {
+                    localStorage.setItem('lastInterpretationResults', JSON.stringify(successfulResults));
+                }
+            } catch (error) {
+                console.error("無法儲存解經結果到 localStorage:", error);
+            }
+
+            resultsContainer.innerHTML = '';
             results.forEach(result => {
                 if (result.isError) {
                     displayResult(result.model, result.content, true);
@@ -204,20 +234,23 @@
         }
 
         function displayPerplexityResult(data) {
-            let processedContent = data.content;
-            const sources = data.sources;
-            let sourcesHtml = '';
-
-            if (sources && sources.length > 0) {
-                sources.forEach((source, index) => {
-                    const citationNumber = index + 1;
-                    const url = source.url || '#';
-                    const title = source.title || url;
-                    const link = ` <a href="${url}" target="_blank" title="${title}"><sup>[${citationNumber}]</sup></a>`;
-                    const regex = new RegExp(`\\[${citationNumber}\\]`, 'g');
-                    processedContent = processedContent.replace(regex, link);
+            let content = data.content;
+            const sources = data.sources || [];
+            if (sources.length > 0) {
+                content = content.replace(/\[(\d+)\]/g, (match, citationNumberStr) => {
+                    const citationNumber = parseInt(citationNumberStr, 10);
+                    const sourceIndex = citationNumber - 1;
+                    if (sourceIndex >= 0 && sourceIndex < sources.length) {
+                        const source = sources[sourceIndex];
+                        const url = source.url || '#';
+                        const title = source.title || url;
+                        return ` <a href="${url}" target="_blank" title="${title}"><sup>[${citationNumber}]</sup></a>`;
+                    }
+                    return match;
                 });
-
+            }
+            let sourcesHtml = '';
+            if (sources.length > 0) {
                 sourcesHtml += '<div class="sources-list"><h3>參考資料</h3><ol>';
                 sources.forEach(source => {
                     const url = source.url || '#';
@@ -227,10 +260,9 @@
                 });
                 sourcesHtml += '</ol></div>';
             }
-
             const card = document.createElement('div');
             card.className = 'result-card';
-            const finalHtml = marked.parse(processedContent) + sourcesHtml;
+            const finalHtml = marked.parse(content) + sourcesHtml;
             card.innerHTML = `<h2>Perplexity Sonar 的解經結果</h2><div class="content-body">${finalHtml}</div>`;
             resultsContainer.appendChild(card);
         }
@@ -252,8 +284,10 @@
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Flash', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
         async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message); }
         
+        // --- 更新後的初始化流程 ---
         populateBooks();
         loadLastSelection();
+        loadLastResults(); // 在頁面載入時，嘗試顯示上次的結果
     });
     </script>
 </body>
