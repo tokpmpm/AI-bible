@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多AI專業解經系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212; --text-color: #e0e0e0; --primary-color: #007bff;
+            --card-bg: #1e1e1e; --border-color: #333; --input-bg: #2a2a2a;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 1rem; line-height: 1.6;
+        }
+        main { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        header { text-align: center; }
+        h1 { color: var(--primary-color); margin-bottom: 0.5rem; }
+        p.subtitle { color: #aaa; font-style: italic; margin-top: 0; }
+        .info-section { color: #ccc; font-size: 0.95rem; margin: 1rem 0; }
+        .info-section a { color: var(--primary-color); text-decoration: none; }
+        .info-section a:hover { text-decoration: underline; }
+        .form-section {
+            background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;
+        }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        select {
+            width: 100%; padding: 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color);
+            border-radius: 4px; color: var(--text-color); font-size: 1rem; box-sizing: border-box;
+        }
+        .selectors-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+        .models { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .model-checkbox { display: flex; align-items: center; gap: 0.5rem; }
+        input[type="checkbox"] { width: 1.5em; height: 1.5em; }
+        button {
+            width: 100%; padding: 1rem; background-color: var(--primary-color); color: white; border: none;
+            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease;
+        }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
+        .result-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
+        .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        .result-card.error h2 { color: #f44336; }
+        .content-body { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 1rem; }
+        .content-body h1, .content-body h2, .content-body h3 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; margin-top: 1.5em; }
+        .content-body ul, .content-body ol { padding-left: 2em; }
+        .content-body li { margin-bottom: 0.5em; }
+        .content-body a { color: var(--primary-color); text-decoration: none; }
+        .content-body a:hover { text-decoration: underline; }
+        .content-body sup { line-height: 0; }
+        .content-body .sources-list { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+        .content-body .sources-list h3 { margin-top: 0; color: var(--primary-color); }
+        .content-body .sources-list ol { padding-left: 1.5em; }
+        .content-body .sources-list li { margin-bottom: 0.8em; }
+        .content-body .sources-list a { color: var(--primary-color); text-decoration: underline; }
+        .content-body .sources-list a:hover { opacity: 0.8; }
+        .content-body .sources-list .source-domain { color: #aaa; font-size: 0.9em; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        .sponsorship-section { margin: 1.5rem 0 0.5rem; }
+        .bmc-button { display: inline-block; padding: 10px 20px; background-color: #FFDD00; color: #000000; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background-color 0.3s ease, transform 0.2s ease; }
+        .bmc-button:hover { background-color: #FFE766; transform: scale(1.05); }
+
+        /* 新增的 debug 區塊樣式 */
+        .debug-section {
+            margin-top: 1.5rem;
+            border-top: 2px solid var(--border-color);
+            padding-top: 1rem;
+        }
+        .debug-toggle {
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s ease;
+        }
+        .debug-toggle:hover {
+            background-color: #444;
+        }
+        .debug-content {
+            display: none;
+            margin-top: 1rem;
+            background-color: #1a1a1a;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        .debug-content.show {
+            display: block;
+        }
+        .debug-content pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>多AI專業解經系統</h1>
+            <p class="subtitle">比較 ChatGPT, Gemini, Perplexity 的經節分析</p>
+            <p class="subtitle">因為呼叫 API 需要費用，目前採用是性價比較高的模型，不是最佳模型，AI 解經若有偏差，請多包容</p>
+            <div class="info-section">
+                <p>想知道<a href="https://lihi3.me/WfbvE" target="_blank" rel="noopener noreferrer"> 各 AI 解經有什麼差異的可以參考這篇文章</a></p>
+                <p>有什麼建議歡迎跟我說，目前設定是以對聖經中等了解的人為主解經</p>
+            </div>
+            <div class="sponsorship-section">
+                <a href="https://buymeacoffee.com/tokpmpm" target="_blank" class="bmc-button">
+                    ☕ 歡迎贊助支持這個專案
+                </a>
+            </div>
+        </header>
+
+        <form id="bible-form" class="form-section">
+            <div class="form-group">
+                <label>選擇經節範圍</label>
+                <div class="selectors-grid">
+                    <select id="book-select" required></select>
+                    <select id="chapter-select" required></select>
+                    <select id="verse-start-select" required></select>
+                    <select id="verse-end-select" required></select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>選擇要查詢的 AI 模型</label>
+                <div class="models">
+                    <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Pro</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Reasoning</label></div>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">開始解經</button>
+        </form>
+
+        <div id="results-container"></div>
+    </main>
+    
+    <script src="config.js" defer></script> 
+    <script src="bible-data.js" defer></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let lastSubmitTime = 0;
+        const SUBMIT_COOLDOWN = 20000; // 20秒
+
+        const bookSelect = document.getElementById('book-select');
+        const chapterSelect = document.getElementById('chapter-select');
+        const verseStartSelect = document.getElementById('verse-start-select');
+        const verseEndSelect = document.getElementById('verse-end-select');
+        const bibleForm = document.getElementById('bible-form');
+        const resultsContainer = document.getElementById('results-container');
+        const submitBtn = document.getElementById('submit-btn');
+
+        function populateBooks() { bibleStructureData.forEach((book, index) => { const option = document.createElement('option'); option.value = index; option.textContent = book.book_name; bookSelect.appendChild(option); }); }
+        function populateChapters() { const bookIndex = bookSelect.value; const book = bibleStructureData[bookIndex]; chapterSelect.innerHTML = ''; book.chapters.forEach((chapter, index) => { const option = document.createElement('option'); option.value = index; option.textContent = `第 ${chapter.c} 章`; chapterSelect.appendChild(option); }); }
+        function populateVerses() { const bookIndex = bookSelect.value; const chapterIndex = chapterSelect.value; if (!bibleStructureData[bookIndex] || !bibleStructureData[bookIndex].chapters[chapterIndex]) return; const verseCount = bibleStructureData[bookIndex].chapters[chapterIndex].v; verseStartSelect.innerHTML = ''; verseEndSelect.innerHTML = ''; for (let i = 1; i <= verseCount; i++) { const optionStart = document.createElement('option'); optionStart.value = i; optionStart.textContent = `從 ${i} 節`; verseStartSelect.appendChild(optionStart); const optionEnd = document.createElement('option'); optionEnd.value = i; optionEnd.textContent = `到 ${i} 節`; verseEndSelect.appendChild(optionEnd); } verseEndSelect.value = verseCount; }
+        
+        function saveLastSelection() { const data = { selectedBook: bookSelect.value, selectedChapter: chapterSelect.value, selectedVerseStart: verseStartSelect.value, selectedVerseEnd: verseEndSelect.value }; Object.entries(data).forEach(([key, value]) => { if (typeof Storage !== 'undefined') { localStorage.setItem(key, value); } }); }
+        
+        function loadLastSelection() { if (typeof Storage === 'undefined') return; const savedBook = localStorage.getItem('selectedBook'); if (savedBook !== null) { bookSelect.value = savedBook; populateChapters(); const savedChapter = localStorage.getItem('selectedChapter'); if (savedChapter !== null) { chapterSelect.value = savedChapter; populateVerses(); const savedVerseStart = localStorage.getItem('selectedVerseStart'); const savedVerseEnd = localStorage.getItem('selectedVerseEnd'); if (savedVerseStart !== null) verseStartSelect.value = savedVerseStart; if (savedVerseEnd !== null) verseEndSelect.value = savedVerseEnd; } else { populateVerses(); } } else { populateChapters(); populateVerses(); } }
+
+        function loadLastResults() {
+            if (typeof Storage === 'undefined') return;
+            
+            const savedResultsJSON = localStorage.getItem('lastInterpretationResults');
+            if (savedResultsJSON) {
+                try {
+                    const savedResults = JSON.parse(savedResultsJSON);
+                    if (Array.isArray(savedResults) && savedResults.length > 0) {
+                        resultsContainer.innerHTML = '';
+                        savedResults.forEach(result => {
+                            if (result.isError) {
+                                displayResult(result.model, result.content, true, result.rawResponse);
+                            } else if (result.model === 'Perplexity Sonar Reasoning') {
+                                displayPerplexityResult(result.content, result.rawResponse);
+                            } else {
+                                displayResult(result.model, result.content, false, result.rawResponse);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error("無法解析儲存的解經結果:", error);
+                    localStorage.removeItem('lastInterpretationResults');
+                }
+            }
+        }
+        
+        bookSelect.addEventListener('change', () => { populateChapters(); populateVerses(); });
+        chapterSelect.addEventListener('change', populateVerses);
+        verseStartSelect.addEventListener('change', () => { const startVerse = parseInt(verseStartSelect.value); const endVerse = parseInt(verseEndSelect.value); if (endVerse < startVerse) { verseEndSelect.value = startVerse; } });
+
+        bibleForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentTime = Date.now();
+            if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
+                alert('操作過於頻繁，請稍後再試。');
+                return;
+            }
+            saveLastSelection();
+            
+            const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
+            const { OPENAI_API_KEY: openAIKey, GEMINI_API_KEY: geminiKey, PERPLEXITY_API_KEY: perplexityKey } = ownerKeys;
+            
+            const bookIndex = parseInt(bookSelect.value);
+            const chapterIndex = parseInt(chapterSelect.value);
+            const startVerse = parseInt(verseStartSelect.value);
+            const endVerse = parseInt(verseEndSelect.value);
+            const bookName = bibleStructureData[bookIndex].book_name;
+            const chapterNum = bibleStructureData[bookIndex].chapters[chapterIndex].c;
+            const reference = startVerse === endVerse ? `${bookName} ${chapterNum}:${startVerse}` : `${bookName} ${chapterNum}:${startVerse}-${endVerse}`;
+            
+            const useChatGPT = document.getElementById('use-chatgpt').checked;
+            const useGemini = document.getElementById('use-gemini').checked;
+            const usePerplexity = document.getElementById('use-perplexity').checked;
+            
+            if (!useChatGPT && !useGemini && !usePerplexity) { alert('請至少選擇一個 AI 模型！'); return; }
+            
+            lastSubmitTime = currentTime; 
+            submitBtn.disabled = true; 
+            submitBtn.textContent = "正在解經中...";
+            resultsContainer.innerHTML = '<div class="loader"></div>';
+            
+            const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
+            
+            const promises = [];
+            if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
+            if (useGemini && geminiKey) promises.push(callGemini(prompt, geminiKey));
+            if (usePerplexity && perplexityKey) promises.push(callPerplexity(prompt, perplexityKey));
+            
+            if (promises.length === 0) {
+                 resultsContainer.innerHTML = '';
+                 displayResult('系統提示', '無法發送請求，因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
+                 submitBtn.disabled = false; submitBtn.textContent = "開始解經"; return;
+            }
+
+            const results = await Promise.all(promises);
+            
+            try {
+                const successfulResults = results.filter(r => !r.isError);
+                if (successfulResults.length > 0 && typeof Storage !== 'undefined') {
+                    localStorage.setItem('lastInterpretationResults', JSON.stringify(successfulResults));
+                }
+            } catch (error) {
+                console.error("無法儲存解經結果:", error);
+            }
+
+            resultsContainer.innerHTML = '';
+            results.forEach(result => {
+                if (result.isError) {
+                    displayResult(result.model, result.content, true, result.rawResponse);
+                } else if (result.model === 'Perplexity Sonar Reasoning') {
+                    displayPerplexityResult(result.content, result.rawResponse);
+                } else {
+                    displayResult(result.model, result.content, false, result.rawResponse);
+                }
+            });
+
+            submitBtn.disabled = false; submitBtn.textContent = "開始解經";
+        });
+
+        function displayResult(modelName, content, isError = false, rawResponse = null) { 
+            const card = document.createElement('div'); 
+            card.className = 'result-card'; 
+            if (isError) { 
+                card.classList.add('error'); 
+                card.innerHTML = `<h2>${modelName} 的解經結果</h2><pre>${content}</pre>`; 
+            } else { 
+                card.innerHTML = `<h2>${modelName} 的解經結果</h2><div class="content-body">${marked.parse(content)}</div>`; 
+            }
+            
+            // 添加原始回應的除錯區塊
+            if (rawResponse) {
+                addDebugSection(card, rawResponse, modelName);
+            }
+            
+            resultsContainer.appendChild(card); 
+        }
+
+        function displayPerplexityResult(data, rawResponse = null) {
+            let content = data.content;
+            const sources = data.sources || [];
+            
+            // 生成參考資料清單
+            let sourcesHtml = '';
+            if (sources.length > 0) {
+                sourcesHtml += '<div class="sources-list"><h3>📚 參考資料來源</h3><ol>';
+                sources.forEach((source, index) => {
+                    const url = source.url || '#';
+                    const title = source.title || '未命名來源';
+                    const domain = source.domain || '';
+                    sourcesHtml += `<li><strong>[${index + 1}]</strong> <a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>${domain ? ` <span class="source-domain">(${domain})</span>` : ''}</li>`;
+                });
+                sourcesHtml += '</ol></div>';
+            }
+            
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            const finalHtml = marked.parse(content) + sourcesHtml;
+            card.innerHTML = `<h2>Perplexity Sonar Reasoning 的解經結果</h2><div class="content-body">${finalHtml}</div>`;
+            
+            // 添加原始回應的除錯區塊
+            if (rawResponse) {
+                addDebugSection(card, rawResponse, 'Perplexity Sonar Reasoning');
+            }
+            
+            resultsContainer.appendChild(card);
+        }
+
+        function addDebugSection(card, rawResponse, modelName) {
+            const debugSection = document.createElement('div');
+            debugSection.className = 'debug-section';
+            
+            const debugToggle = document.createElement('button');
+            debugToggle.className = 'debug-toggle';
+            debugToggle.textContent = `🔧 查看 ${modelName} 完整 API 回應`;
+            
+            const debugContent = document.createElement('div');
+            debugContent.className = 'debug-content';
+            debugContent.innerHTML = `<pre>${JSON.stringify(rawResponse, null, 2)}</pre>`;
+            
+            debugToggle.addEventListener('click', () => {
+                debugContent.classList.toggle('show');
+                debugToggle.textContent = debugContent.classList.contains('show') 
+                    ? `🔧 隱藏 ${modelName} 完整 API 回應`
+                    : `🔧 查看 ${modelName} 完整 API 回應`;
+            });
+            
+            debugSection.appendChild(debugToggle);
+            debugSection.appendChild(debugContent);
+            card.appendChild(debugSection);
+        }
+
+        async function callAPI(modelName, url, options, responseHandler) { 
+            try { 
+                const response = await fetch(url, options); 
+                if (!response.ok) { 
+                    const errorData = await response.json(); 
+                    const errorMessage = errorData.error?.message || JSON.stringify(errorData.error); 
+                    throw new Error(`${modelName} API Error: ${errorMessage}`); 
+                } 
+                const data = await response.json(); 
+                console.log(`${modelName} 完整 API 回應:`, data); // 加入 console.log
+                const processedContent = responseHandler(data);
+                return { 
+                    model: modelName, 
+                    content: processedContent, 
+                    isError: false,
+                    rawResponse: data // 保存完整的原始回應
+                }; 
+            } catch (error) { 
+                console.error(`${modelName} Error:`, error); 
+                if (error instanceof TypeError && error.message.includes('fetch')) { 
+                    const detailedError = `查詢失敗：${error.message}。\n\n這通常是網路連線、瀏覽器安全問題 (CORS) 或廣告攔截器導致的。\n\n【解決方案】:\n1. 檢查您的網路連線。\n2. 暫時停用廣告攔截器。\n3. 如果您是本地開發，請使用 Live Server。`; 
+                    return { 
+                        model: modelName, 
+                        content: detailedError, 
+                        isError: true,
+                        rawResponse: null
+                    }; 
+                } 
+                return { 
+                    model: modelName, 
+                    content: `查詢失敗：${error.message}`, 
+                    isError: true,
+                    rawResponse: error.response || null
+                }; 
+            } 
+        }
+
+        async function callChatGPT(prompt, apiKey) { 
+            return callAPI('ChatGPT 5 Nano', 'https://api.openai.com/v1/chat/completions', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, 
+                body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) 
+            }, (data) => data.choices[0].message.content); 
+        }
+        
+        async function callGemini(prompt, apiKey) { 
+            return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, 
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) 
+            }, (data) => data.candidates[0].content.parts[0].text); 
+        }
+        
+        async function callPerplexity(prompt, apiKey) { 
+            return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${apiKey}` 
+                }, 
+                body: JSON.stringify({ 
+                    model: "sonar-reasoning", 
+                    messages: [{ role: "user", content: prompt }] 
+                }) 
+            }, (data) => {
+                // 傳遞完整的 message 物件，包含可能的 sources
+                if (data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message;
+                }
+                return data;
+            }); 
+        }
+        
+        populateBooks();
+        loadLastSelection();
+        loadLastResults();
+    });
+    </script>
+</body>
+</html>
