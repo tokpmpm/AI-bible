@@ -43,7 +43,7 @@
         .result-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
         .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
         .result-card.error h2 { color: #f44336; }
-        .content-body { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 1rem; }
+        .content-body { word-wrap: break-word; font-family: inherit; font-size: 1rem; }
         .content-body h1, .content-body h2, .content-body h3 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; margin-top: 1.5em; }
         .content-body ul, .content-body ol { padding-left: 2em; }
         .content-body li { margin-bottom: 0.5em; }
@@ -56,7 +56,7 @@
         .content-body .sources-list li { margin-bottom: 0.8em; }
         .content-body .sources-list a { color: var(--primary-color); text-decoration: underline; }
         .content-body .sources-list a:hover { opacity: 0.8; }
-        .content-body .sources-list .source-domain { color: #aaa; font-size: 0.9em; }
+        .content-body .sources-list .source-domain { color: #aaa; font-size: 0.9em; margin-left: 0.5em; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
         .sponsorship-section { margin: 1.5rem 0 0.5rem; }
         .bmc-button { display: inline-block; padding: 10px 20px; background-color: #FFDD00; color: #000000; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background-color 0.3s ease, transform 0.2s ease; }
@@ -146,7 +146,8 @@
                             if (result.isError) {
                                 displayResult(result.model, result.content, true);
                             } else if (result.model === 'Perplexity Sonar Reasoning') {
-                                displayPerplexityResult(result.content);
+                                // **修改點**: 調用新的 displayPerplexityResult 函式
+                                displayPerplexityResult(result.content.choices[0].message, result.content);
                             } else {
                                 displayResult(result.model, result.content, false);
                             }
@@ -223,7 +224,8 @@
                 if (result.isError) {
                     displayResult(result.model, result.content, true);
                 } else if (result.model === 'Perplexity Sonar Reasoning') {
-                    displayPerplexityResult(result.content);
+                    // **修改點**: 調用新的 displayPerplexityResult 函式
+                    displayPerplexityResult(result.content.choices[0].message, result.content);
                 } else {
                     displayResult(result.model, result.content, false);
                 }
@@ -237,34 +239,56 @@
             card.className = 'result-card'; 
             if (isError) { 
                 card.classList.add('error'); 
-                card.innerHTML = `<h2>${modelName} 的解經結果</h2><pre>${content}</pre>`; 
+                card.innerHTML = `<h2>${modelName}</h2><pre>${content}</pre>`; 
             } else { 
-                card.innerHTML = `<h2>${modelName} 的解經結果</h2><div class="content-body">${marked.parse(content)}</div>`; 
+                card.innerHTML = `<h2>${modelName}</h2><div class="content-body">${marked.parse(content)}</div>`; 
             } 
             resultsContainer.appendChild(card); 
         }
 
-        function displayPerplexityResult(data) {
-            let content = data.content;
-            const sources = data.sources || [];
-            
-            // 生成參考資料清單
-            let sourcesHtml = '';
-            if (sources.length > 0) {
-                sourcesHtml += '<div class="sources-list"><h3>📚 參考資料來源</h3><ol>';
-                sources.forEach((source, index) => {
-                    const url = source.url || '#';
-                    const title = source.title || '未命名來源';
-                    const domain = source.domain || '';
-                    sourcesHtml += `<li><strong>[${index + 1}]</strong> <a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>${domain ? ` <span class="source-domain">(${domain})</span>` : ''}</li>`;
+        // =========================================================
+        //  替換成 debug.html 的版本
+        // =========================================================
+        function displayPerplexityResult(messageData, rawResponse = null) {
+            let content = messageData.content || '';
+            const search_results = rawResponse.search_results || [];
+            const citations = rawResponse.citations || [];
+
+            // 替換內文中的引用標記 [1], [2] 等為超連結
+            if (citations.length > 0) {
+                content = content.replace(/\[(\d+)\]/g, (match, number) => {
+                    const index = parseInt(number, 10) - 1;
+                    if (citations[index]) {
+                        const url = citations[index];
+                        return `<sup><a href="${url}" target="_blank" rel="noopener noreferrer" title="來源 ${number}: ${url}">[${number}]</a></sup>`;
+                    }
+                    return match;
                 });
-                sourcesHtml += '</ol></div>';
+            }
+
+            // 生成文末的詳細引用來源列表
+            let citationsListHtml = '';
+            if (search_results.length > 0) {
+                citationsListHtml += '<div class="sources-list"><h3>📚 引用來源</h3><ol>';
+                search_results.forEach((result) => {
+                    const url = result.url || '#';
+                    const title = result.title || url;
+                    try {
+                        const domain = new URL(url).hostname;
+                        citationsListHtml += `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a> <span class="source-domain">(${domain})</span></li>`;
+                    } catch (e) {
+                         citationsListHtml += `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
+                    }
+                });
+                citationsListHtml += '</ol></div>';
             }
             
             const card = document.createElement('div');
             card.className = 'result-card';
-            const finalHtml = marked.parse(content) + sourcesHtml;
-            card.innerHTML = `<h2>Perplexity Sonar Reasoning 的解經結果</h2><div class="content-body">${finalHtml}</div>`;
+            // 將解析後的內文與引用列表組合起來
+            const finalHtml = marked.parse(content) + citationsListHtml;
+            card.innerHTML = `<h2>Perplexity Sonar Reasoning</h2><div class="content-body">${finalHtml}</div>`;
+            
             resultsContainer.appendChild(card);
         }
 
@@ -285,6 +309,7 @@
         
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
         
+        // **修改點**: 讓 callPerplexity 回傳完整的 API JSON 物件
         async function callPerplexity(prompt, apiKey) { 
             return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { 
                 method: 'POST', 
@@ -297,11 +322,7 @@
                     messages: [{ role: "user", content: prompt }] 
                 }) 
             }, (data) => {
-                console.log('Perplexity API 完整回應:', data); // 除錯用
-                // 傳遞完整的 message 物件，包含可能的 sources
-                if (data.choices && data.choices[0] && data.choices[0].message) {
-                    return data.choices[0].message;
-                }
+                // 直接回傳整個 data 物件
                 return data;
             }); 
         }
