@@ -116,8 +116,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         let lastSubmitTime = 0;
         const SUBMIT_COOLDOWN = 15000; // 15秒冷卻
-        let countdownInterval;
-
+        
         const bookSelect = document.getElementById('book-select');
         const chapterSelect = document.getElementById('chapter-select');
         const verseStartSelect = document.getElementById('verse-start-select');
@@ -165,9 +164,9 @@
 
         bibleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const currentTime = Date.now();
-            if (submitBtn.disabled) return; // 防止重複點擊
+            if (submitBtn.disabled) return; // 防止在處理中時重複點擊
 
+            const currentTime = Date.now();
             if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
                 const remainingTime = Math.ceil((SUBMIT_COOLDOWN - (currentTime - lastSubmitTime)) / 1000);
                 alert(`操作過於頻繁，請等待 ${remainingTime} 秒後再試。`);
@@ -177,48 +176,46 @@
             
             lastSubmitTime = currentTime; 
             submitBtn.disabled = true; 
-
-            // --- 開始倒數計時 ---
-            let secondsLeft = 15;
-            const updateButtonText = () => {
-                if (secondsLeft > 0) {
-                    submitBtn.textContent = `正在解經中... (${secondsLeft}s)`;
-                } else {
-                    submitBtn.textContent = "正在解經中... (請稍候)";
-                }
-            };
-            updateButtonText();
-            countdownInterval = setInterval(() => {
-                secondsLeft--;
-                updateButtonText();
-                if (secondsLeft <= 0) {
-                    clearInterval(countdownInterval);
-                }
-            }, 1000);
-
             resultsContainer.innerHTML = '<div class="loader"></div>';
             
-            const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
-            const { OPENAI_API_KEY: openAIKey, GEMINI_API_KEY: geminiKey, PERPLEXITY_API_KEY: perplexityKey } = ownerKeys;
+            let countdownInterval;
             
-            const bookIndex = parseInt(bookSelect.value);
-            const chapterIndex = parseInt(chapterSelect.value);
-            const startVerse = parseInt(verseStartSelect.value);
-            const endVerse = parseInt(verseEndSelect.value);
-            const bookName = bibleStructureData[bookIndex].book_name;
-            const chapterNum = bibleStructureData[bookIndex].chapters[chapterIndex].c;
-            const reference = startVerse === endVerse ? `${bookName} ${chapterNum}:${startVerse}` : `${bookName} ${chapterNum}:${startVerse}-${endVerse}`;
-            
-            const useChatGPT = document.getElementById('use-chatgpt').checked;
-            const useGemini = document.getElementById('use-gemini').checked;
-            const usePerplexity = document.getElementById('use-perplexity').checked;
-            
-            // 使用 try...finally 來確保按鈕狀態最終會恢復
             try {
+                // --- 開始倒數計時 ---
+                let secondsLeft = 15;
+                const updateButtonText = () => {
+                    if (secondsLeft > 0) {
+                        submitBtn.textContent = `正在解經中... (${secondsLeft}s)`;
+                    } else {
+                        submitBtn.textContent = "正在解經中... (請稍候)";
+                        clearInterval(countdownInterval); // 倒數結束後停止計時器
+                    }
+                };
+                updateButtonText(); // 立即顯示
+                countdownInterval = setInterval(() => {
+                    secondsLeft--;
+                    updateButtonText();
+                }, 1000);
+
+                const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
+                const { OPENAI_API_KEY: openAIKey, GEMINI_API_KEY: geminiKey, PERPLEXITY_API_KEY: perplexityKey } = ownerKeys;
+                
+                const bookIndex = parseInt(bookSelect.value);
+                const chapterIndex = parseInt(chapterSelect.value);
+                const startVerse = parseInt(verseStartSelect.value);
+                const endVerse = parseInt(verseEndSelect.value);
+                const bookName = bibleStructureData[bookIndex].book_name;
+                const chapterNum = bibleStructureData[bookIndex].chapters[chapterIndex].c;
+                const reference = startVerse === endVerse ? `${bookName} ${chapterNum}:${startVerse}` : `${bookName} ${chapterNum}:${startVerse}-${endVerse}`;
+                
+                const useChatGPT = document.getElementById('use-chatgpt').checked;
+                const useGemini = document.getElementById('use-gemini').checked;
+                const usePerplexity = document.getElementById('use-perplexity').checked;
+                
                 if (!useChatGPT && !useGemini && !usePerplexity) {
                     alert('請至少選擇一個 AI 模型！');
-                    resultsContainer.innerHTML = ''; // 清空加載動畫
-                    return; 
+                    resultsContainer.innerHTML = '';
+                    return; // 使用 return 會直接跳到 finally
                 }
                 
                 const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
@@ -231,20 +228,12 @@
                 if (promises.length === 0) {
                     resultsContainer.innerHTML = '';
                     displayResult('系統提示', '無法發送請求，因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
-                    return;
+                    return; // 使用 return 會直接跳到 finally
                 }
 
                 const results = await Promise.all(promises);
                 
-                try {
-                    const successfulResults = results.filter(r => !r.isError);
-                    if (successfulResults.length > 0 && typeof Storage !== 'undefined') {
-                        localStorage.setItem('lastInterpretationResults', JSON.stringify(successfulResults));
-                    }
-                } catch (error) {
-                    console.error("無法儲存解經結果:", error);
-                }
-
+                // --- API請求完成，處理結果 ---
                 resultsContainer.innerHTML = '';
                 results.forEach(result => {
                     if (result.isError) {
@@ -255,9 +244,20 @@
                         displayResult(result.model, result.content, false);
                     }
                 });
+
+                // 儲存成功結果
+                try {
+                    const successfulResults = results.filter(r => !r.isError);
+                    if (successfulResults.length > 0 && typeof Storage !== 'undefined') {
+                        localStorage.setItem('lastInterpretationResults', JSON.stringify(successfulResults));
+                    }
+                } catch (error) {
+                    console.error("無法儲存解經結果:", error);
+                }
+
             } finally {
-                // 不論成功或失敗，最後都恢復按鈕狀態
-                clearInterval(countdownInterval);
+                // --- 無論成功或失敗，最後都恢復按鈕狀態 ---
+                clearInterval(countdownInterval); // 確保計時器被清除
                 submitBtn.disabled = false; 
                 submitBtn.textContent = "開始解經";
             }
