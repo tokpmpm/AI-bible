@@ -115,7 +115,8 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         let lastSubmitTime = 0;
-        const SUBMIT_COOLDOWN = 20000; // 20秒
+        const SUBMIT_COOLDOWN = 15000; // 15秒冷卻
+        let countdownInterval;
 
         const bookSelect = document.getElementById('book-select');
         const chapterSelect = document.getElementById('chapter-select');
@@ -135,7 +136,6 @@
 
         function loadLastResults() {
             if (typeof Storage === 'undefined') return;
-            
             const savedResultsJSON = localStorage.getItem('lastInterpretationResults');
             if (savedResultsJSON) {
                 try {
@@ -146,7 +146,6 @@
                             if (result.isError) {
                                 displayResult(result.model, result.content, true);
                             } else if (result.model === 'Perplexity Sonar Reasoning') {
-                                // **修改點**: 調用新的 displayPerplexityResult 函式
                                 displayPerplexityResult(result.content.choices[0].message, result.content);
                             } else {
                                 displayResult(result.model, result.content, false);
@@ -167,11 +166,37 @@
         bibleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const currentTime = Date.now();
+            if (submitBtn.disabled) return; // 防止重複點擊
+
             if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
-                alert('操作過於頻繁，請稍後再試。');
+                const remainingTime = Math.ceil((SUBMIT_COOLDOWN - (currentTime - lastSubmitTime)) / 1000);
+                alert(`操作過於頻繁，請等待 ${remainingTime} 秒後再試。`);
                 return;
             }
             saveLastSelection();
+            
+            lastSubmitTime = currentTime; 
+            submitBtn.disabled = true; 
+
+            // --- 開始倒數計時 ---
+            let secondsLeft = 15;
+            const updateButtonText = () => {
+                if (secondsLeft > 0) {
+                    submitBtn.textContent = `正在解經中... (${secondsLeft}s)`;
+                } else {
+                    submitBtn.textContent = "正在解經中... (請稍候)";
+                }
+            };
+            updateButtonText();
+            countdownInterval = setInterval(() => {
+                secondsLeft--;
+                updateButtonText();
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+
+            resultsContainer.innerHTML = '<div class="loader"></div>';
             
             const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
             const { OPENAI_API_KEY: openAIKey, GEMINI_API_KEY: geminiKey, PERPLEXITY_API_KEY: perplexityKey } = ownerKeys;
@@ -188,50 +213,54 @@
             const useGemini = document.getElementById('use-gemini').checked;
             const usePerplexity = document.getElementById('use-perplexity').checked;
             
-            if (!useChatGPT && !useGemini && !usePerplexity) { alert('請至少選擇一個 AI 模型！'); return; }
-            
-            lastSubmitTime = currentTime; 
-            submitBtn.disabled = true; 
-            submitBtn.textContent = "正在解經中...";
-            resultsContainer.innerHTML = '<div class="loader"></div>';
-            
-            const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
-            
-            const promises = [];
-            if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
-            if (useGemini && geminiKey) promises.push(callGemini(prompt, geminiKey));
-            if (usePerplexity && perplexityKey) promises.push(callPerplexity(prompt, perplexityKey));
-            
-            if (promises.length === 0) {
-                 resultsContainer.innerHTML = '';
-                 displayResult('系統提示', '無法發送請求，因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
-                 submitBtn.disabled = false; submitBtn.textContent = "開始解經"; return;
-            }
-
-            const results = await Promise.all(promises);
-            
+            // 使用 try...finally 來確保按鈕狀態最終會恢復
             try {
-                const successfulResults = results.filter(r => !r.isError);
-                if (successfulResults.length > 0 && typeof Storage !== 'undefined') {
-                    localStorage.setItem('lastInterpretationResults', JSON.stringify(successfulResults));
+                if (!useChatGPT && !useGemini && !usePerplexity) {
+                    alert('請至少選擇一個 AI 模型！');
+                    resultsContainer.innerHTML = ''; // 清空加載動畫
+                    return; 
                 }
-            } catch (error) {
-                console.error("無法儲存解經結果:", error);
+                
+                const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
+                
+                const promises = [];
+                if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
+                if (useGemini && geminiKey) promises.push(callGemini(prompt, geminiKey));
+                if (usePerplexity && perplexityKey) promises.push(callPerplexity(prompt, perplexityKey));
+                
+                if (promises.length === 0) {
+                    resultsContainer.innerHTML = '';
+                    displayResult('系統提示', '無法發送請求，因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
+                    return;
+                }
+
+                const results = await Promise.all(promises);
+                
+                try {
+                    const successfulResults = results.filter(r => !r.isError);
+                    if (successfulResults.length > 0 && typeof Storage !== 'undefined') {
+                        localStorage.setItem('lastInterpretationResults', JSON.stringify(successfulResults));
+                    }
+                } catch (error) {
+                    console.error("無法儲存解經結果:", error);
+                }
+
+                resultsContainer.innerHTML = '';
+                results.forEach(result => {
+                    if (result.isError) {
+                        displayResult(result.model, result.content, true);
+                    } else if (result.model === 'Perplexity Sonar Reasoning') {
+                        displayPerplexityResult(result.content.choices[0].message, result.content);
+                    } else {
+                        displayResult(result.model, result.content, false);
+                    }
+                });
+            } finally {
+                // 不論成功或失敗，最後都恢復按鈕狀態
+                clearInterval(countdownInterval);
+                submitBtn.disabled = false; 
+                submitBtn.textContent = "開始解經";
             }
-
-            resultsContainer.innerHTML = '';
-            results.forEach(result => {
-                if (result.isError) {
-                    displayResult(result.model, result.content, true);
-                } else if (result.model === 'Perplexity Sonar Reasoning') {
-                    // **修改點**: 調用新的 displayPerplexityResult 函式
-                    displayPerplexityResult(result.content.choices[0].message, result.content);
-                } else {
-                    displayResult(result.model, result.content, false);
-                }
-            });
-
-            submitBtn.disabled = false; submitBtn.textContent = "開始解經";
         });
 
         function displayResult(modelName, content, isError = false) { 
@@ -246,15 +275,11 @@
             resultsContainer.appendChild(card); 
         }
 
-        // =========================================================
-        //  替換成 debug.html 的版本
-        // =========================================================
         function displayPerplexityResult(messageData, rawResponse = null) {
             let content = messageData.content || '';
             const search_results = rawResponse.search_results || [];
             const citations = rawResponse.citations || [];
 
-            // 替換內文中的引用標記 [1], [2] 等為超連結
             if (citations.length > 0) {
                 content = content.replace(/\[(\d+)\]/g, (match, number) => {
                     const index = parseInt(number, 10) - 1;
@@ -266,7 +291,6 @@
                 });
             }
 
-            // 生成文末的詳細引用來源列表
             let citationsListHtml = '';
             if (search_results.length > 0) {
                 citationsListHtml += '<div class="sources-list"><h3>📚 引用來源</h3><ol>';
@@ -285,7 +309,6 @@
             
             const card = document.createElement('div');
             card.className = 'result-card';
-            // 將解析後的內文與引用列表組合起來
             const finalHtml = marked.parse(content) + citationsListHtml;
             card.innerHTML = `<h2>Perplexity Sonar Reasoning</h2><div class="content-body">${finalHtml}</div>`;
             
@@ -309,7 +332,6 @@
         
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
         
-        // **修改點**: 讓 callPerplexity 回傳完整的 API JSON 物件
         async function callPerplexity(prompt, apiKey) { 
             return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { 
                 method: 'POST', 
@@ -322,7 +344,6 @@
                     messages: [{ role: "user", content: prompt }] 
                 }) 
             }, (data) => {
-                // 直接回傳整個 data 物件
                 return data;
             }); 
         }
