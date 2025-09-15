@@ -10,6 +10,9 @@
             --bg-color: #121212; --text-color: #e0e0e0; --primary-color: #007bff;
             --card-bg: #1e1e1e; --border-color: #333; --input-bg: #2a2a2a;
         }
+        html {
+            scroll-behavior: smooth;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 1rem; line-height: 1.6;
@@ -32,7 +35,7 @@
         }
         .selectors-grid { 
             display: grid; 
-            grid-template-columns: 1fr; /* 手機上單欄 */
+            grid-template-columns: 1fr;
             gap: 1rem; 
         }
         .range-selector-group {
@@ -41,7 +44,6 @@
             gap: 0.5rem;
             align-items: center;
         }
-        /* 電腦上兩欄 */
         @media (min-width: 600px) {
             .selectors-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -78,6 +80,53 @@
         .sponsorship-section { margin: 1.5rem 0 0.5rem; }
         .bmc-button { display: inline-block; padding: 10px 20px; background-color: #FFDD00; color: #000000; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background-color 0.3s ease, transform 0.2s ease; }
         .bmc-button:hover { background-color: #FFE766; transform: scale(1.05); }
+
+        #go-to-top-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+        }
+        #go-to-top-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* --- 修改後樣式 --- */
+        .card-actions {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .copy-btn {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .copy-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        /* --- 結束修改後樣式 --- */
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -140,6 +189,8 @@
         <div id="results-container"></div>
     </main>
     
+    <button id="go-to-top-btn" title="回到最上頁">&#8679;</button>
+    
     <script src="config.js" defer></script> 
     <script src="bible-data.js" defer></script>
 
@@ -147,6 +198,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         let lastSubmitTime = 0;
         const SUBMIT_COOLDOWN = 15000;
+        let currentReference = '';
         
         const bookSelect = document.getElementById('book-select');
         const startChapterSelect = document.getElementById('start-chapter-select');
@@ -157,6 +209,18 @@
         const bibleForm = document.getElementById('bible-form');
         const resultsContainer = document.getElementById('results-container');
         const submitBtn = document.getElementById('submit-btn');
+        const goToTopBtn = document.getElementById('go-to-top-btn');
+
+        window.onscroll = function() {
+            if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+                goToTopBtn.style.display = "flex";
+            } else {
+                goToTopBtn.style.display = "none";
+            }
+        };
+        goToTopBtn.addEventListener('click', () => {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        });
 
         function populateBooks() {
             bibleStructureData.forEach((book, index) => {
@@ -170,29 +234,21 @@
         function populateChapters() {
             const bookIndex = bookSelect.value;
             const book = bibleStructureData[bookIndex];
-            const oldStartChapter = startChapterSelect.value;
-            const oldEndChapter = endChapterSelect.value;
-
             startChapterSelect.innerHTML = '';
             endChapterSelect.innerHTML = '';
-
             book.chapters.forEach((chapter, index) => {
                 const startOption = document.createElement('option');
                 startOption.value = index;
                 startOption.textContent = `第 ${chapter.c} 章`;
                 startChapterSelect.appendChild(startOption);
-
                 const endOption = document.createElement('option');
                 endOption.value = index;
                 endOption.textContent = `第 ${chapter.c} 章`;
                 endChapterSelect.appendChild(endOption);
             });
-
-            // *** MODIFIED: 預設結束章節為最後一章 ***
             if (endChapterSelect.options.length > 0) {
                  endChapterSelect.value = endChapterSelect.options.length - 1;
             }
-
             populateVerses('start');
             populateVerses('end');
         }
@@ -201,10 +257,8 @@
             const bookIndex = bookSelect.value;
             const chapterSelect = (type === 'start') ? startChapterSelect : endChapterSelect;
             const verseSelect = (type === 'start') ? startVerseSelect : endVerseSelect;
-            
             const chapterIndex = chapterSelect.value;
             if (bookIndex === null || chapterIndex === null || !bibleStructureData[bookIndex] || !bibleStructureData[bookIndex].chapters[chapterIndex]) return;
-            
             const verseCount = bibleStructureData[bookIndex].chapters[chapterIndex].v;
             verseSelect.innerHTML = '';
             for (let i = 1; i <= verseCount; i++) {
@@ -213,8 +267,6 @@
                 option.textContent = `${i} 節`;
                 verseSelect.appendChild(option);
             }
-
-            // *** MODIFIED: 如果是結束節，自動選中最後一節 ***
             if (type === 'end' && verseSelect.options.length > 0) {
                 verseSelect.value = verseSelect.options.length;
             }
@@ -223,12 +275,10 @@
         function syncSelectors() {
             const startChapter = parseInt(startChapterSelect.value);
             const endChapter = parseInt(endChapterSelect.value);
-            
             if (startChapter > endChapter) {
                 endChapterSelect.value = startChapter;
-                populateVerses('end'); // 重置結束節並選中最後一節
+                populateVerses('end');
             }
-
             if (startChapter === endChapter) {
                 const startVerse = parseInt(startVerseSelect.value);
                 const endVerse = parseInt(endVerseSelect.value);
@@ -239,25 +289,13 @@
         }
 
         bookSelect.addEventListener('change', populateChapters);
-        startChapterSelect.addEventListener('change', () => {
-            populateVerses('start');
-            syncSelectors();
-        });
-        endChapterSelect.addEventListener('change', () => {
-            populateVerses('end');
-            syncSelectors();
-        });
+        startChapterSelect.addEventListener('change', () => { populateVerses('start'); syncSelectors(); });
+        endChapterSelect.addEventListener('change', () => { populateVerses('end'); syncSelectors(); });
         startVerseSelect.addEventListener('change', syncSelectors);
         endVerseSelect.addEventListener('change', syncSelectors);
 
         function saveLastSelection() {
-            const data = {
-                book: bookSelect.value,
-                startChapter: startChapterSelect.value,
-                startVerse: startVerseSelect.value,
-                endChapter: endChapterSelect.value,
-                endVerse: endVerseSelect.value,
-            };
+            const data = { book: bookSelect.value, startChapter: startChapterSelect.value, startVerse: startVerseSelect.value, endChapter: endChapterSelect.value, endVerse: endVerseSelect.value };
             if (typeof Storage !== 'undefined') {
                 localStorage.setItem('bibleSelection', JSON.stringify(data));
             }
@@ -349,15 +387,12 @@
                 const endChapterNum = bibleStructureData[bookIndex].chapters[endChapterIndex].c;
                 const endVerseNum = parseInt(endVerseSelect.value);
 
-                let reference;
                 if (startChapterNum === endChapterNum) {
-                    if (startVerseNum === endVerseNum) {
-                        reference = `${bookName} ${startChapterNum}:${startVerseNum}`;
-                    } else {
-                        reference = `${bookName} ${startChapterNum}:${startVerseNum}-${endVerseNum}`;
-                    }
+                    currentReference = (startVerseNum === endVerseNum)
+                        ? `${bookName} ${startChapterNum}:${startVerseNum}`
+                        : `${bookName} ${startChapterNum}:${startVerseNum}-${endVerseNum}`;
                 } else {
-                    reference = `${bookName} ${startChapterNum}:${startVerseNum}-${endChapterNum}:${endVerseNum}`;
+                    currentReference = `${bookName} ${startChapterNum}:${startVerseNum}-${endChapterNum}:${endVerseNum}`;
                 }
                 
                 const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
@@ -373,7 +408,7 @@
                     return;
                 }
                 
-                const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${reference}\n\n請對 **${reference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
+                const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${currentReference}\n\n請對 **${currentReference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
                 
                 const promises = [];
                 if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
@@ -415,16 +450,29 @@
             }
         });
         
-        function displayResult(modelName, content, isError = false) { 
-            const card = document.createElement('div'); 
-            card.className = 'result-card'; 
-            if (isError) { 
-                card.classList.add('error'); 
-                card.innerHTML = `<h2>${modelName}</h2><pre>${content}</pre>`; 
-            } else { 
-                card.innerHTML = `<h2>${modelName}</h2><div class="content-body">${marked.parse(content)}</div>`; 
-            } 
-            resultsContainer.appendChild(card); 
+        // --- 顯示結果函式 (修改後) ---
+        function createResultCard(modelName, innerHTML, isError = false) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            
+            let finalHTML = `<h2>${modelName}</h2>${innerHTML}`;
+
+            if (!isError) {
+                finalHTML += `
+                    <div class="card-actions">
+                        <button class="copy-btn">複製內容</button>
+                    </div>`;
+            } else {
+                card.classList.add('error');
+            }
+
+            card.innerHTML = finalHTML;
+            resultsContainer.appendChild(card);
+        }
+
+        function displayResult(modelName, content, isError = false) {
+            const innerHTML = isError ? `<pre>${content}</pre>` : `<div class="content-body">${marked.parse(content)}</div>`;
+            createResultCard(modelName, innerHTML, isError);
         }
 
         function displayPerplexityResult(messageData, rawResponse = null) {
@@ -459,13 +507,50 @@
                 citationsListHtml += '</ol></div>';
             }
             
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            const finalHtml = marked.parse(content) + citationsListHtml;
-            card.innerHTML = `<h2>Perplexity Sonar Reasoning</h2><div class="content-body">${finalHtml}</div>`;
-            
-            resultsContainer.appendChild(card);
+            const contentHTML = `<div class="content-body">${marked.parse(content) + citationsListHtml}</div>`;
+            createResultCard('Perplexity Sonar Reasoning', contentHTML);
         }
+
+        // --- 複製到剪貼簿功能 ---
+        resultsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('copy-btn')) {
+                const copyButton = e.target;
+                const card = copyButton.closest('.result-card');
+                const title = card.querySelector('h2').innerText;
+                const contentBody = card.querySelector('.content-body');
+                const sourcesList = card.querySelector('.sources-list');
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = contentBody.innerHTML;
+                const sourcesClone = tempDiv.querySelector('.sources-list');
+                if (sourcesClone) sourcesClone.remove();
+
+                let plainText = tempDiv.innerText;
+
+                let sourcesText = '';
+                if (sourcesList) {
+                    sourcesText += '\n\n---\n引用來源:\n';
+                    sourcesList.querySelectorAll('ol li').forEach((li, index) => {
+                        const link = li.querySelector('a');
+                        sourcesText += `${index + 1}. ${link.innerText} (${link.href})\n`;
+                    });
+                }
+                
+                // --- 修改後的複製文案 ---
+                const textToCopy = `【${title}】\n經文：${currentReference}\n\n${plainText}${sourcesText}\n---\n由「多AI專業解經系統」生成\nhttps://tokpmpm.github.io/AI-bible/index.html`;
+
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = '已複製！';
+                    setTimeout(() => {
+                        copyButton.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('複製失敗:', err);
+                    alert('複製失敗，您的瀏覽器可能不支援此功能。');
+                });
+            }
+        });
 
         async function callAPI(modelName, url, options, responseHandler) { 
             try { 
@@ -481,24 +566,8 @@
         }
 
         async function callChatGPT(prompt, apiKey) { return callAPI('ChatGPT 5 Nano', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
-        
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
-        
-        async function callPerplexity(prompt, apiKey) { 
-            return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { 
-                method: 'POST', 
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${apiKey}` 
-                }, 
-                body: JSON.stringify({ 
-                    model: "sonar-reasoning", 
-                    messages: [{ role: "user", content: prompt }] 
-                }) 
-            }, (data) => {
-                return data;
-            }); 
-        }
+        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
         
         populateBooks();
         loadLastSelection();
