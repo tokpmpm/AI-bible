@@ -11,7 +11,7 @@
             --card-bg: #1e1e1e; --border-color: #333; --input-bg: #2a2a2a;
         }
         html {
-            scroll-behavior: smooth; /* 啟用平滑滾動 */
+            scroll-behavior: smooth;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -59,7 +59,7 @@
         }
         button:disabled { background-color: #555; cursor: not-allowed; }
         #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
-        .result-card { position: relative; background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
+        .result-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
         .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
         .result-card.error h2 { color: #f44336; }
         .content-body { word-wrap: break-word; font-family: inherit; font-size: 1rem; }
@@ -81,7 +81,6 @@
         .bmc-button { display: inline-block; padding: 10px 20px; background-color: #FFDD00; color: #000000; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background-color 0.3s ease, transform 0.2s ease; }
         .bmc-button:hover { background-color: #FFE766; transform: scale(1.05); }
 
-        /* --- 新增樣式 --- */
         #go-to-top-btn {
             position: fixed;
             bottom: 20px;
@@ -92,7 +91,7 @@
             color: white;
             border: none;
             border-radius: 50%;
-            display: none; /* 預設隱藏 */
+            display: none;
             align-items: center;
             justify-content: center;
             font-size: 24px;
@@ -105,16 +104,21 @@
             opacity: 1;
             transform: scale(1.1);
         }
+
+        /* --- 修改後樣式 --- */
+        .card-actions {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
         .copy-btn {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
             background-color: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            padding: 0.3rem 0.8rem;
-            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: background-color 0.3s, color 0.3s;
         }
@@ -122,7 +126,7 @@
             background-color: var(--primary-color);
             color: white;
         }
-        /* --- 結束新增樣式 --- */
+        /* --- 結束修改後樣式 --- */
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -185,7 +189,6 @@
         <div id="results-container"></div>
     </main>
     
-    <!-- 新增回到最上頁按鈕 -->
     <button id="go-to-top-btn" title="回到最上頁">&#8679;</button>
     
     <script src="config.js" defer></script> 
@@ -195,7 +198,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         let lastSubmitTime = 0;
         const SUBMIT_COOLDOWN = 15000;
-        let currentReference = ''; // 用於複製功能
+        let currentReference = '';
         
         const bookSelect = document.getElementById('book-select');
         const startChapterSelect = document.getElementById('start-chapter-select');
@@ -208,7 +211,6 @@
         const submitBtn = document.getElementById('submit-btn');
         const goToTopBtn = document.getElementById('go-to-top-btn');
 
-        // --- 回到最上頁功能 ---
         window.onscroll = function() {
             if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
                 goToTopBtn.style.display = "flex";
@@ -293,13 +295,7 @@
         endVerseSelect.addEventListener('change', syncSelectors);
 
         function saveLastSelection() {
-            const data = {
-                book: bookSelect.value,
-                startChapter: startChapterSelect.value,
-                startVerse: startVerseSelect.value,
-                endChapter: endChapterSelect.value,
-                endVerse: endVerseSelect.value,
-            };
+            const data = { book: bookSelect.value, startChapter: startChapterSelect.value, startVerse: startVerseSelect.value, endChapter: endChapterSelect.value, endVerse: endVerseSelect.value };
             if (typeof Storage !== 'undefined') {
                 localStorage.setItem('bibleSelection', JSON.stringify(data));
             }
@@ -454,22 +450,29 @@
             }
         });
         
-        function displayResult(modelName, content, isError = false) { 
-            const card = document.createElement('div'); 
-            card.className = 'result-card'; 
+        // --- 顯示結果函式 (修改後) ---
+        function createResultCard(modelName, innerHTML, isError = false) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
             
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'copy-btn';
-            copyBtn.textContent = '複製內容';
-            
-            if (isError) { 
-                card.classList.add('error'); 
-                card.innerHTML = `<h2>${modelName}</h2><pre>${content}</pre>`; 
-            } else { 
-                card.innerHTML = `<h2>${modelName}</h2><div class="content-body">${marked.parse(content)}</div>`; 
-                card.prepend(copyBtn); // 只在成功時加入複製按鈕
-            } 
-            resultsContainer.appendChild(card); 
+            let finalHTML = `<h2>${modelName}</h2>${innerHTML}`;
+
+            if (!isError) {
+                finalHTML += `
+                    <div class="card-actions">
+                        <button class="copy-btn">複製內容</button>
+                    </div>`;
+            } else {
+                card.classList.add('error');
+            }
+
+            card.innerHTML = finalHTML;
+            resultsContainer.appendChild(card);
+        }
+
+        function displayResult(modelName, content, isError = false) {
+            const innerHTML = isError ? `<pre>${content}</pre>` : `<div class="content-body">${marked.parse(content)}</div>`;
+            createResultCard(modelName, innerHTML, isError);
         }
 
         function displayPerplexityResult(messageData, rawResponse = null) {
@@ -504,17 +507,8 @@
                 citationsListHtml += '</ol></div>';
             }
             
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            const finalHtml = marked.parse(content) + citationsListHtml;
-            card.innerHTML = `<h2>Perplexity Sonar Reasoning</h2><div class="content-body">${finalHtml}</div>`;
-            
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'copy-btn';
-            copyBtn.textContent = '複製內容';
-            card.prepend(copyBtn);
-            
-            resultsContainer.appendChild(card);
+            const contentHTML = `<div class="content-body">${marked.parse(content) + citationsListHtml}</div>`;
+            createResultCard('Perplexity Sonar Reasoning', contentHTML);
         }
 
         // --- 複製到剪貼簿功能 ---
@@ -526,10 +520,8 @@
                 const contentBody = card.querySelector('.content-body');
                 const sourcesList = card.querySelector('.sources-list');
                 
-                // 將HTML轉為可讀的純文字
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = contentBody.innerHTML;
-                // 移除引用來源，我們將手動格式化它
                 const sourcesClone = tempDiv.querySelector('.sources-list');
                 if (sourcesClone) sourcesClone.remove();
 
@@ -544,7 +536,8 @@
                     });
                 }
                 
-                const textToCopy = `【${title}】\n經文：${currentReference}\n\n${plainText}${sourcesText}\n---\n由「多AI專業解經系統」生成`;
+                // --- 修改後的複製文案 ---
+                const textToCopy = `【${title}】\n經文：${currentReference}\n\n${plainText}${sourcesText}\n---\n由「多AI專業解經系統」生成\nhttps://tokpmpm.github.io/AI-bible/index.html`;
 
                 navigator.clipboard.writeText(textToCopy).then(() => {
                     const originalText = copyButton.textContent;
@@ -573,24 +566,8 @@
         }
 
         async function callChatGPT(prompt, apiKey) { return callAPI('ChatGPT 5 Nano', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
-        
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
-        
-        async function callPerplexity(prompt, apiKey) { 
-            return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { 
-                method: 'POST', 
-                headers: { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${apiKey}` 
-                }, 
-                body: JSON.stringify({ 
-                    model: "sonar-reasoning", 
-                    messages: [{ role: "user", content: prompt }] 
-                }) 
-            }, (data) => {
-                return data;
-            }); 
-        }
+        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
         
         populateBooks();
         loadLastSelection();
