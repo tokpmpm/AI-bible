@@ -148,7 +148,6 @@
         let lastSubmitTime = 0;
         const SUBMIT_COOLDOWN = 15000;
         
-        // 重新命名選擇器變數
         const bookSelect = document.getElementById('book-select');
         const startChapterSelect = document.getElementById('start-chapter-select');
         const startVerseSelect = document.getElementById('start-verse-select');
@@ -171,6 +170,9 @@
         function populateChapters() {
             const bookIndex = bookSelect.value;
             const book = bibleStructureData[bookIndex];
+            const oldStartChapter = startChapterSelect.value;
+            const oldEndChapter = endChapterSelect.value;
+
             startChapterSelect.innerHTML = '';
             endChapterSelect.innerHTML = '';
 
@@ -185,6 +187,12 @@
                 endOption.textContent = `第 ${chapter.c} 章`;
                 endChapterSelect.appendChild(endOption);
             });
+
+            // *** MODIFIED: 預設結束章節為最後一章 ***
+            if (endChapterSelect.options.length > 0) {
+                 endChapterSelect.value = endChapterSelect.options.length - 1;
+            }
+
             populateVerses('start');
             populateVerses('end');
         }
@@ -205,6 +213,11 @@
                 option.textContent = `${i} 節`;
                 verseSelect.appendChild(option);
             }
+
+            // *** MODIFIED: 如果是結束節，自動選中最後一節 ***
+            if (type === 'end' && verseSelect.options.length > 0) {
+                verseSelect.value = verseSelect.options.length;
+            }
         }
         
         function syncSelectors() {
@@ -213,7 +226,7 @@
             
             if (startChapter > endChapter) {
                 endChapterSelect.value = startChapter;
-                populateVerses('end');
+                populateVerses('end'); // 重置結束節並選中最後一節
             }
 
             if (startChapter === endChapter) {
@@ -225,7 +238,6 @@
             }
         }
 
-        // --- 事件監聽器 ---
         bookSelect.addEventListener('change', populateChapters);
         startChapterSelect.addEventListener('change', () => {
             populateVerses('start');
@@ -238,7 +250,6 @@
         startVerseSelect.addEventListener('change', syncSelectors);
         endVerseSelect.addEventListener('change', syncSelectors);
 
-        // --- 儲存與讀取 ---
         function saveLastSelection() {
             const data = {
                 book: bookSelect.value,
@@ -258,7 +269,7 @@
             if (savedData) {
                 const data = JSON.parse(savedData);
                 bookSelect.value = data.book;
-                populateChapters(); // This will also trigger verse population
+                populateChapters(); 
                 startChapterSelect.value = data.startChapter;
                 populateVerses('start');
                 startVerseSelect.value = data.startVerse;
@@ -270,7 +281,6 @@
             }
         }
         
-        // ... (loadLastResults 保持不變)
         function loadLastResults() {
             if (typeof Storage === 'undefined') return;
             const savedResultsJSON = localStorage.getItem('lastInterpretationResults');
@@ -330,7 +340,6 @@
                     updateButtonText();
                 }, 1000);
 
-                // --- 修改組合經文範圍的邏輯 ---
                 const bookIndex = parseInt(bookSelect.value);
                 const bookName = bibleStructureData[bookIndex].book_name;
                 const startChapterIndex = parseInt(startChapterSelect.value);
@@ -406,7 +415,6 @@
             }
         });
         
-        // ... (其他函式 displayResult, displayPerplexityResult, callAPI, etc. 保持不變)
         function displayResult(modelName, content, isError = false) { 
             const card = document.createElement('div'); 
             card.className = 'result-card'; 
@@ -492,7 +500,6 @@
             }); 
         }
         
-        // --- 初始化頁面 ---
         populateBooks();
         loadLastSelection();
         loadLastResults();
