@@ -105,7 +105,6 @@
             transform: scale(1.1);
         }
 
-        /* --- 修改後樣式 --- */
         .card-actions {
             margin-top: 1.5rem;
             padding-top: 1rem;
@@ -126,7 +125,6 @@
             background-color: var(--primary-color);
             color: white;
         }
-        /* --- 結束修改後樣式 --- */
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -358,7 +356,14 @@
             
             lastSubmitTime = currentTime; 
             submitBtn.disabled = true; 
-            resultsContainer.innerHTML = '<div class="loader"></div>';
+            
+            // --- 修改處：加入提示文字 ---
+            resultsContainer.innerHTML = `
+                <div class="loader"></div>
+                <p style="text-align: center; color: #ccc;">
+                    需要等待時間較久，請大家耐心等候一下，不要跳離畫面，以免解經失敗又浪費了呼叫 API 的費用。
+                </p>
+            `;
             
             let countdownInterval;
             
@@ -450,7 +455,6 @@
             }
         });
         
-        // --- 顯示結果函式 (修改後) ---
         function createResultCard(modelName, innerHTML, isError = false) {
             const card = document.createElement('div');
             card.className = 'result-card';
@@ -511,7 +515,6 @@
             createResultCard('Perplexity Sonar Reasoning', contentHTML);
         }
 
-        // --- 複製到剪貼簿功能 ---
         resultsContainer.addEventListener('click', function(e) {
             if (e.target.classList.contains('copy-btn')) {
                 const copyButton = e.target;
@@ -536,7 +539,6 @@
                     });
                 }
                 
-                // --- 修改後的複製文案 ---
                 const textToCopy = `【${title}】\n經文：${currentReference}\n\n${plainText}${sourcesText}\n---\n由「多AI專業解經系統」生成\nhttps://tokpmpm.github.io/AI-bible/index.html`;
 
                 navigator.clipboard.writeText(textToCopy).then(() => {
