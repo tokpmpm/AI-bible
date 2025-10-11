@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多AI專業解經系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #121212; --text-color: #e0e0e0; --primary-color: #007bff;
+            --card-bg: #1e1e1e; --border-color: #333; --input-bg: #2a2a2a;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 1rem; line-height: 1.6;
+        }
+        main { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+        header { text-align: center; }
+        h1 { color: var(--primary-color); margin-bottom: 0.5rem; }
+        p.subtitle { color: #aaa; font-style: italic; margin-top: 0; }
+        .info-section { color: #ccc; font-size: 0.95rem; margin: 1rem 0; }
+        .info-section a { color: var(--primary-color); text-decoration: none; }
+        .info-section a:hover { text-decoration: underline; }
+        .form-section {
+            background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;
+        }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        select {
+            width: 100%; padding: 0.8rem; background-color: var(--input-bg); border: 1px solid var(--border-color);
+            border-radius: 4px; color: var(--text-color); font-size: 1rem; box-sizing: border-box;
+        }
+        .selectors-grid { 
+            display: grid; 
+            grid-template-columns: 1fr;
+            gap: 1rem; 
+        }
+        .range-selector-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        @media (min-width: 600px) {
+            .selectors-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .models { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .model-checkbox { display: flex; align-items: center; gap: 0.5rem; }
+        input[type="checkbox"] { width: 1.5em; height: 1.5em; }
+        button {
+            width: 100%; padding: 1rem; background-color: var(--primary-color); color: white; border: none;
+            border-radius: 4px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease;
+        }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        #results-container { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
+        .result-card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; animation: fadeIn 0.5s ease; }
+        .result-card h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        .result-card.error h2 { color: #f44336; }
+        .content-body { word-wrap: break-word; font-family: inherit; font-size: 1rem; }
+        .content-body h1, .content-body h2, .content-body h3 { border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; margin-top: 1.5em; }
+        .content-body ul, .content-body ol { padding-left: 2em; }
+        .content-body li { margin-bottom: 0.5em; }
+        .content-body a { color: var(--primary-color); text-decoration: none; }
+        .content-body a:hover { text-decoration: underline; }
+        .content-body sup { line-height: 0; }
+        .content-body .sources-list { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+        .content-body .sources-list h3 { margin-top: 0; color: var(--primary-color); }
+        .content-body .sources-list ol { padding-left: 1.5em; }
+        .content-body .sources-list li { margin-bottom: 0.8em; }
+        .content-body .sources-list a { color: var(--primary-color); text-decoration: underline; }
+        .content-body .sources-list a:hover { opacity: 0.8; }
+        .content-body .sources-list .source-domain { color: #aaa; font-size: 0.9em; margin-left: 0.5em; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        .sponsorship-section { margin: 1.5rem 0 0.5rem; }
+        .bmc-button { display: inline-block; padding: 10px 20px; background-color: #FFDD00; color: #000000; border-radius: 8px; text-decoration: none; font-weight: bold; transition: background-color 0.3s ease, transform 0.2s ease; }
+        .bmc-button:hover { background-color: #FFE766; transform: scale(1.05); }
+
+        #go-to-top-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 1000;
+        }
+        #go-to-top-btn:hover {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .card-actions {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .copy-btn {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .copy-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>多AI專業解經系統</h1>
+            <p class="subtitle">比較 ChatGPT, Gemini, Perplexity 的經節分析</p>
+            <p class="subtitle">因為呼叫 API 需要費用,目前採用是性價比較高的模型,不是最佳模型,AI 解經若有偏差,請多包容</p>
+            <div class="info-section">
+                <p>想知道<a href="https://lihi3.me/WfbvE" target="_blank" rel="noopener noreferrer"> 各 AI 解經有什麼差異的可以參考這篇文章</a></p>
+                <p>有什麼建議歡迎跟我說,目前設定是以對聖經有中等了解的朋友為主來解經</p>
+            </div>
+            <div class="sponsorship-section">
+                <a href="https://buymeacoffee.com/tokpmpm" target="_blank" class="bmc-button">
+                    ☕ 歡迎贊助支持這個專案
+                </a>
+            </div>
+        </header>
+
+        <form id="bible-form" class="form-section">
+            <div class="form-group">
+                <label for="book-select">選擇書卷</label>
+                <select id="book-select" required></select>
+            </div>
+            <div class="form-group">
+                <label>選擇經節範圍</label>
+                <div class="selectors-grid">
+                    <div>
+                        <label for="start-chapter-select" style="font-size: 0.9em; color: #ccc;">從</label>
+                        <div class="range-selector-group">
+                            <select id="start-chapter-select" required></select>
+                            <select id="start-verse-select" required></select>
+                        </div>
+                    </div>
+                     <div>
+                        <label for="end-chapter-select" style="font-size: 0.9em; color: #ccc;">到</label>
+                        <div class="range-selector-group">
+                            <select id="end-chapter-select" required></select>
+                            <select id="end-verse-select" required></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>選擇要查詢的 AI 模型</label>
+                <div class="models">
+                    <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Pro</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Reasoning Pro</label></div>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">開始解經</button>
+        </form>
+
+        <div id="results-container"></div>
+    </main>
+    
+    <button id="go-to-top-btn" title="回到最上頁">&#8679;</button>
+    
+    <script src="config.js"></script> 
+    <script src="bible-data.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let lastSubmitTime = 0;
+        const SUBMIT_COOLDOWN = 50000;
+        let currentReference = '';
+        let countdownInterval = null;
+        
+        const bookSelect = document.getElementById('book-select');
+        const startChapterSelect = document.getElementById('start-chapter-select');
+        const startVerseSelect = document.getElementById('start-verse-select');
+        const endChapterSelect = document.getElementById('end-chapter-select');
+        const endVerseSelect = document.getElementById('end-verse-select');
+        
+        const bibleForm = document.getElementById('bible-form');
+        const resultsContainer = document.getElementById('results-container');
+        const submitBtn = document.getElementById('submit-btn');
+        const goToTopBtn = document.getElementById('go-to-top-btn');
+
+        window.onscroll = function() {
+            if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+                goToTopBtn.style.display = "flex";
+            } else {
+                goToTopBtn.style.display = "none";
+            }
+        };
+        
+        goToTopBtn.addEventListener('click', () => {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+
+        function populateBooks() {
+            if (typeof bibleStructureData === 'undefined') {
+                console.error('bible-data.js 尚未載入');
+                return;
+            }
+            bibleStructureData.forEach((book, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = book.book_name;
+                bookSelect.appendChild(option);
+            });
+        }
+
+        function populateChapters() {
+            const bookIndex = bookSelect.value;
+            if (!bibleStructureData[bookIndex]) return;
+            
+            const book = bibleStructureData[bookIndex];
+            startChapterSelect.innerHTML = '';
+            endChapterSelect.innerHTML = '';
+            
+            book.chapters.forEach((chapter, index) => {
+                const startOption = document.createElement('option');
+                startOption.value = index;
+                startOption.textContent = `第 ${chapter.c} 章`;
+                startChapterSelect.appendChild(startOption);
+                
+                const endOption = document.createElement('option');
+                endOption.value = index;
+                endOption.textContent = `第 ${chapter.c} 章`;
+                endChapterSelect.appendChild(endOption);
+            });
+            
+            if (endChapterSelect.options.length > 0) {
+                endChapterSelect.value = endChapterSelect.options.length - 1;
+            }
+            
+            populateVerses('start');
+            populateVerses('end');
+        }
+
+        function populateVerses(type) {
+            const bookIndex = bookSelect.value;
+            const chapterSelect = (type === 'start') ? startChapterSelect : endChapterSelect;
+            const verseSelect = (type === 'start') ? startVerseSelect : endVerseSelect;
+            const chapterIndex = chapterSelect.value;
+            
+            if (bookIndex === null || chapterIndex === null || !bibleStructureData[bookIndex] || !bibleStructureData[bookIndex].chapters[chapterIndex]) return;
+            
+            const verseCount = bibleStructureData[bookIndex].chapters[chapterIndex].v;
+            verseSelect.innerHTML = '';
+            
+            for (let i = 1; i <= verseCount; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `${i} 節`;
+                verseSelect.appendChild(option);
+            }
+            
+            if (type === 'end' && verseSelect.options.length > 0) {
+                verseSelect.value = verseSelect.options.length;
+            }
+        }
+        
+        function syncSelectors() {
+            const startChapter = parseInt(startChapterSelect.value);
+            const endChapter = parseInt(endChapterSelect.value);
+            
+            if (startChapter > endChapter) {
+                endChapterSelect.value = startChapter;
+                populateVerses('end');
+            }
+            
+            if (startChapter === endChapter) {
+                const startVerse = parseInt(startVerseSelect.value);
+                const endVerse = parseInt(endVerseSelect.value);
+                if (startVerse > endVerse) {
+                    endVerseSelect.value = startVerse;
+                }
+            }
+        }
+
+        bookSelect.addEventListener('change', populateChapters);
+        startChapterSelect.addEventListener('change', () => { populateVerses('start'); syncSelectors(); });
+        endChapterSelect.addEventListener('change', () => { populateVerses('end'); syncSelectors(); });
+        startVerseSelect.addEventListener('change', syncSelectors);
+        endVerseSelect.addEventListener('change', syncSelectors);
+
+        bibleForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (submitBtn.disabled) return;
+            
+            const currentTime = Date.now();
+            if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
+                const remainingTime = Math.ceil((SUBMIT_COOLDOWN - (currentTime - lastSubmitTime)) / 1000);
+                alert(`操作過於頻繁,請等待 ${remainingTime} 秒後再試。`);
+                return;
+            }
+            
+            lastSubmitTime = currentTime; 
+            submitBtn.disabled = true;
+            
+            resultsContainer.innerHTML = `
+                <div id="loading-overlay" style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: var(--card-bg);
+                    border: 2px solid var(--primary-color);
+                    border-radius: 12px;
+                    padding: 2rem;
+                    text-align: center;
+                    max-width: 90%;
+                    width: 400px;
+                    z-index: 9999;
+                    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+                ">
+                    <div class="loader" style="margin: 0 auto 1.5rem;"></div>
+                    <p style="color: var(--primary-color); font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem;" id="countdown-text">正在解經中... (50s)</p>
+                    <p style="color: var(--text-color); font-size: 1.1rem; line-height: 1.8; margin: 0;">
+                        需要等待時間較久,請大家耐心等候一下,使用手機的朋友不要跳離畫面,以免解經失敗又浪費了呼叫 API 的費用。
+                    </p>
+                </div>
+            `;
+            
+            let secondsLeft = 50;
+            
+            const updateCountdown = () => {
+                const countdownEl = document.getElementById('countdown-text');
+                if (countdownEl) {
+                    if (secondsLeft > 0) {
+                        countdownEl.textContent = `正在解經中... (${secondsLeft}s)`;
+                        submitBtn.textContent = `正在解經中... (${secondsLeft}s)`;
+                        secondsLeft--;
+                    } else {
+                        countdownEl.textContent = "正在解經中... (請稍候)";
+                        submitBtn.textContent = "正在解經中... (請稍候)";
+                    }
+                }
+            };
+            
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+
+            try {
+                const bookIndex = parseInt(bookSelect.value);
+                const bookName = bibleStructureData[bookIndex].book_name;
+                const startChapterIndex = parseInt(startChapterSelect.value);
+                const startChapterNum = bibleStructureData[bookIndex].chapters[startChapterIndex].c;
+                const startVerseNum = parseInt(startVerseSelect.value);
+                const endChapterIndex = parseInt(endChapterSelect.value);
+                const endChapterNum = bibleStructureData[bookIndex].chapters[endChapterIndex].c;
+                const endVerseNum = parseInt(endVerseSelect.value);
+
+                if (startChapterNum === endChapterNum) {
+                    currentReference = (startVerseNum === endVerseNum)
+                        ? `${bookName} ${startChapterNum}:${startVerseNum}`
+                        : `${bookName} ${startChapterNum}:${startVerseNum}-${endVerseNum}`;
+                } else {
+                    currentReference = `${bookName} ${startChapterNum}:${startVerseNum}-${endChapterNum}:${endVerseNum}`;
+                }
+                
+                const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
+                const { OPENAI_API_KEY: openAIKey, GEMINI_API_KEY: geminiKey, PERPLEXITY_API_KEY: perplexityKey } = ownerKeys;
+                
+                const useChatGPT = document.getElementById('use-chatgpt').checked;
+                const useGemini = document.getElementById('use-gemini').checked;
+                const usePerplexity = document.getElementById('use-perplexity').checked;
+                
+                if (!useChatGPT && !useGemini && !usePerplexity) {
+                    alert('請至少選擇一個 AI 模型！');
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+                
+                const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：
+
+【章節】：${currentReference}
+
+請對 **${currentReference}** 進行分析,並依照以下結構回答：
+
+1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式,解釋本章中核心的關鍵概念與術語。
+
+2. **現代生活應用**：並告知在現代中可以做出來的案例,假設我完全不懂這個主題,請使用白話說明與簡單詞彙,給予生動的比喻與生活例子。
+
+3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？
+
+4. **本章經典經句與總結**：列出此段的經典經句,最後總結從這些經文可以学到什麼。
+
+請用繁體中文回答,並確保排版清晰易讀。`;
+                
+                const promises = [];
+                if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
+                if (useGemini && geminiKey) promises.push(callGemini(prompt, geminiKey));
+                if (usePerplexity && perplexityKey) promises.push(callPerplexity(prompt, perplexityKey));
+                
+                if (promises.length === 0) {
+                    resultsContainer.innerHTML = '';
+                    displayResult('系統提示', '無法發送請求,因為缺少必要的 API 金鑰設定。請檢查 config.js 中的設定。', true);
+                    return;
+                }
+
+                const results = await Promise.all(promises);
+                
+                resultsContainer.innerHTML = '';
+                results.forEach(result => {
+                    if (result.isError) {
+                        displayResult(result.model, result.content, true);
+                    } else if (result.model === 'Perplexity Sonar Reasoning Pro') {
+                        displayPerplexityResult(result.content.choices[0].message, result.content);
+                    } else {
+                        displayResult(result.model, result.content, false);
+                    }
+                });
+
+            } catch (error) {
+                console.error('執行錯誤:', error);
+                resultsContainer.innerHTML = '';
+                displayResult('系統錯誤', `發生未預期的錯誤: ${error.message}`, true);
+            } finally {
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                submitBtn.disabled = false; 
+                submitBtn.textContent = "開始解經";
+            }
+        });
+        
+        function createResultCard(modelName, innerHTML, isError = false) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            if (isError) card.classList.add('error');
+            
+            let finalHTML = `<h2>${modelName}</h2>${innerHTML}`;
+
+            if (!isError) {
+                finalHTML += `
+                    <div class="card-actions">
+                        <button class="copy-btn">複製內容</button>
+                    </div>`;
+            }
+
+            card.innerHTML = finalHTML;
+            resultsContainer.appendChild(card);
+        }
+
+        function displayResult(modelName, content, isError = false) {
+            const innerHTML = isError ? `<pre>${content}</pre>` : `<div class="content-body">${marked.parse(content)}</div>`;
+            createResultCard(modelName, innerHTML, isError);
+        }
+
+        function displayPerplexityResult(messageData, rawResponse = null) {
+            let content = messageData.content || '';
+            const search_results = rawResponse.search_results || [];
+            const citations = rawResponse.citations || [];
+
+            if (citations.length > 0) {
+                content = content.replace(/\[(\d+)\]/g, (match, number) => {
+                    const index = parseInt(number, 10) - 1;
+                    if (citations[index]) {
+                        const url = citations[index];
+                        return `<sup><a href="${url}" target="_blank" rel="noopener noreferrer" title="來源 ${number}: ${url}">[${number}]</a></sup>`;
+                    }
+                    return match;
+                });
+            }
+
+            let citationsListHtml = '';
+            if (search_results.length > 0) {
+                citationsListHtml += '<div class="sources-list"><h3>📚 引用來源</h3><ol>';
+                search_results.forEach((result) => {
+                    const url = result.url || '#';
+                    const title = result.title || url;
+                    try {
+                        const domain = new URL(url).hostname;
+                        citationsListHtml += `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a> <span class="source-domain">(${domain})</span></li>`;
+                    } catch (e) {
+                         citationsListHtml += `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
+                    }
+                });
+                citationsListHtml += '</ol></div>';
+            }
+            
+            const contentHTML = `<div class="content-body">${marked.parse(content) + citationsListHtml}</div>`;
+            createResultCard('Perplexity Sonar Reasoning Pro', contentHTML);
+        }
+
+        resultsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('copy-btn')) {
+                const copyButton = e.target;
+                const card = copyButton.closest('.result-card');
+                const title = card.querySelector('h2').innerText;
+                const contentBody = card.querySelector('.content-body');
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = contentBody.innerHTML;
+                const sourcesClone = tempDiv.querySelector('.sources-list');
+                if (sourcesClone) sourcesClone.remove();
+
+                let plainText = tempDiv.innerText;
+
+                const sourcesList = card.querySelector('.sources-list');
+                let sourcesText = '';
+                if (sourcesList) {
+                    sourcesText += '\n\n---\n引用來源:\n';
+                    sourcesList.querySelectorAll('ol li').forEach((li, index) => {
+                        const link = li.querySelector('a');
+                        sourcesText += `${index + 1}. ${link.innerText} (${link.href})\n`;
+                    });
+                }
+                
+                const textToCopy = `【${title}】\n經文：${currentReference}\n\n${plainText}${sourcesText}\n---\n由「多AI專業解經系統」生成`;
+
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = '已複製！';
+                    setTimeout(() => {
+                        copyButton.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('複製失敗:', err);
+                    alert('複製失敗，您的瀏覽器可能不支援此功能。');
+                });
+            }
+        });
+
+        async function callAPI(modelName, url, options, responseHandler) { 
+            try { 
+                const response = await fetch(url, options); 
+                
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error?.message || errorData.message || JSON.stringify(errorData);
+                    } catch (e) {
+                        const errorText = await response.text();
+                        if (errorText) errorMessage += `\n${errorText}`;
+                    }
+                    throw new Error(`${modelName} API 錯誤: ${errorMessage}`); 
+                }
+                
+                const data = await response.json(); 
+                const content = responseHandler(data);
+                
+                if (!content) {
+                    throw new Error('API 回應內容為空');
+                }
+                
+                return { model: modelName, content: `查詢失敗：${error.message}`, isError: true }; 
+            } 
+        }
+
+        async function callChatGPT(prompt, apiKey) {
+            return callAPI(
+                'ChatGPT 5',
+                'https://api.openai.com/v1/responses',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-5",
+                        input: prompt,
+                        reasoning: {
+                            effort: "high"
+                        }
+                    })
+                },
+                (data) => {
+                    if (!data.output_text) {
+                        throw new Error('API 回應格式錯誤：缺少 output_text 欄位');
+                    }
+                    return data.output_text;
+                }
+            );
+        }
+        
+        async function callGemini(prompt, apiKey) { 
+            return callAPI(
+                'Gemini 2.5 Pro', 
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+                { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    }, 
+                    body: JSON.stringify({ 
+                        contents: [{ 
+                            parts: [{ text: prompt }] 
+                        }] 
+                    }) 
+                }, 
+                (data) => {
+                    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+                        throw new Error('API 回應格式錯誤');
+                    }
+                    return data.candidates[0].content.parts[0].text;
+                }
+            ); 
+        }
+        
+        async function callPerplexity(prompt, apiKey) { 
+            return callAPI(
+                'Perplexity Sonar Reasoning Pro', 
+                'https://api.perplexity.ai/chat/completions', 
+                { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${apiKey}` 
+                    }, 
+                    body: JSON.stringify({ 
+                        model: "sonar-reasoning", 
+                        messages: [{ 
+                            role: "user", 
+                            content: prompt 
+                        }] 
+                    }) 
+                }, 
+                (data) => {
+                    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+                        throw new Error('API 回應格式錯誤');
+                    }
+                    return data;
+                }
+            ); 
+        }
+        
+        populateBooks();
+        populateChapters();
+    });
+    </script>
+</body>
+</html>
+                
+                return { model: modelName,
