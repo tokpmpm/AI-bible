@@ -439,7 +439,7 @@
                 const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${currentReference}\n\n請對 **${currentReference}** 進行分析,並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式,解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例,假設我完全不懂這個主題,請使用白話說明與簡單詞彙,給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句,最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答,並確保排版清晰易讀。`;
                 
                 const promises = [];
-                if (use && openAIKey) promises.push(call(prompt, openAIKey));
+                if (use && openAIKey) promises.push(callGpt5(prompt, openAIKey));
                 if (useGemini && geminiKey) promises.push(callGemini(prompt, geminiKey));
                 if (usePerplexity && perplexityKey) promises.push(callPerplexity(prompt, perplexityKey));
                 
