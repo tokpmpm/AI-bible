@@ -175,9 +175,9 @@
             <div class="form-group">
                 <label>選擇要查詢的 AI 模型</label>
                 <div class="models">
-                    <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 4o</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div>
                     <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Pro</label></div>
-                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Pro</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Reasoning Pro</label></div>
                 </div>
             </div>
 
@@ -592,7 +592,7 @@
 
         async function callChatGPT(prompt, apiKey) { return callAPI('ChatGPT 4o', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
-        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Pro', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
+        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning Pro', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
         
         populateBooks();
         loadLastSelection();
