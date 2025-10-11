@@ -105,7 +105,6 @@
             transform: scale(1.1);
         }
 
-        /* --- 修改後樣式 --- */
         .card-actions {
             margin-top: 1.5rem;
             padding-top: 1rem;
@@ -126,7 +125,6 @@
             background-color: var(--primary-color);
             color: white;
         }
-        /* --- 結束修改後樣式 --- */
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -137,10 +135,10 @@
         <header>
             <h1>多AI專業解經系統</h1>
             <p class="subtitle">比較 ChatGPT, Gemini, Perplexity 的經節分析</p>
-            <p class="subtitle">因為呼叫 API 需要費用，目前採用是性價比較高的模型，不是最佳模型，AI 解經若有偏差，請多包容</p>
+            <p class="subtitle">因為呼叫 API 需要費用,目前採用是性價比較高的模型,不是最佳模型,AI 解經若有偏差,請多包容</p>
             <div class="info-section">
                 <p>想知道<a href="https://lihi3.me/WfbvE" target="_blank" rel="noopener noreferrer"> 各 AI 解經有什麼差異的可以參考這篇文章</a></p>
-                <p>有什麼建議歡迎跟我說，目前設定是以對聖經中等了解的人為主解經</p>
+                <p>有什麼建議歡迎跟我說,目前設定是以對聖經有中等了解的朋友為主來解經</p>
             </div>
             <div class="sponsorship-section">
                 <a href="https://buymeacoffee.com/tokpmpm" target="_blank" class="bmc-button">
@@ -179,7 +177,7 @@
                 <div class="models">
                     <div class="model-checkbox"><input type="checkbox" id="use-chatgpt" value="chatgpt" checked><label for="use-chatgpt">ChatGPT 5 Nano</label></div>
                     <div class="model-checkbox"><input type="checkbox" id="use-gemini" value="gemini" checked><label for="use-gemini">Gemini 2.5 Pro</label></div>
-                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Reasoning</label></div>
+                    <div class="model-checkbox"><input type="checkbox" id="use-perplexity" value="perplexity" checked><label for="use-perplexity">Perplexity Sonar Reasoning Pro</label></div>
                 </div>
             </div>
 
@@ -197,7 +195,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         let lastSubmitTime = 0;
-        const SUBMIT_COOLDOWN = 15000;
+        const SUBMIT_COOLDOWN = 50000;
         let currentReference = '';
         
         const bookSelect = document.getElementById('book-select');
@@ -330,7 +328,7 @@
                         savedResults.forEach(result => {
                             if (result.isError) {
                                 displayResult(result.model, result.content, true);
-                            } else if (result.model === 'Perplexity Sonar Reasoning') {
+                            } else if (result.model === 'Perplexity Sonar Reasoning Pro') {
                                 displayPerplexityResult(result.content.choices[0].message, result.content);
                             } else {
                                 displayResult(result.model, result.content, false);
@@ -351,31 +349,61 @@
             const currentTime = Date.now();
             if (currentTime - lastSubmitTime < SUBMIT_COOLDOWN) {
                 const remainingTime = Math.ceil((SUBMIT_COOLDOWN - (currentTime - lastSubmitTime)) / 1000);
-                alert(`操作過於頻繁，請等待 ${remainingTime} 秒後再試。`);
+                alert(`操作過於頻繁,請等待 ${remainingTime} 秒後再試。`);
                 return;
             }
             saveLastSelection();
             
             lastSubmitTime = currentTime; 
             submitBtn.disabled = true; 
-            resultsContainer.innerHTML = '<div class="loader"></div>';
+            
+            // 顯示載入中的提示訊息在螢幕正中心
+            resultsContainer.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: var(--card-bg);
+                    border: 2px solid var(--primary-color);
+                    border-radius: 12px;
+                    padding: 2rem;
+                    text-align: center;
+                    max-width: 90%;
+                    width: 400px;
+                    z-index: 9999;
+                    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+                ">
+                    <div class="loader" style="margin: 0 auto 1.5rem;"></div>
+                    <p style="color: var(--primary-color); font-size: 1.3rem; font-weight: bold; margin-bottom: 1rem;" id="countdown-text">正在解經中... (50s)</p>
+                    <p style="color: var(--text-color); font-size: 1.1rem; line-height: 1.8; margin: 0;">
+                        需要等待時間較久,請大家耐心等候一下,使用手機的朋友不要跳離畫面,以免解經失敗又浪費了呼叫 API 的費用。
+                    </p>
+                </div>
+            `;
             
             let countdownInterval;
+            const countdownText = document.getElementById('countdown-text');
             
             try {
-                let secondsLeft = 15;
-                const updateButtonText = () => {
-                    if (secondsLeft > 0) {
-                        submitBtn.textContent = `正在解經中... (${secondsLeft}s)`;
-                    } else {
-                        submitBtn.textContent = "正在解經中... (請稍候)";
-                        clearInterval(countdownInterval);
+                let secondsLeft = 50;
+                const updateCountdownDisplay = () => {
+                    const countdownElement = document.getElementById('countdown-text');
+                    if (countdownElement) {
+                        if (secondsLeft > 0) {
+                            countdownElement.textContent = `正在解經中... (${secondsLeft}s)`;
+                            submitBtn.textContent = `正在解經中... (${secondsLeft}s)`;
+                        } else {
+                            countdownElement.textContent = "正在解經中... (請稍候)";
+                            submitBtn.textContent = "正在解經中... (請稍候)";
+                            clearInterval(countdownInterval);
+                        }
                     }
                 };
-                updateButtonText();
+                updateCountdownDisplay();
                 countdownInterval = setInterval(() => {
                     secondsLeft--;
-                    updateButtonText();
+                    updateCountdownDisplay();
                 }, 1000);
 
                 const bookIndex = parseInt(bookSelect.value);
@@ -408,7 +436,7 @@
                     return;
                 }
                 
-                const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${currentReference}\n\n請對 **${currentReference}** 進行分析，並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式，解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例，假設我完全不懂這個主題，請使用白話說明與簡單詞彙，給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句，最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答，並確保排版清晰易讀。`;
+                const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${currentReference}\n\n請對 **${currentReference}** 進行分析,並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式,解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例,假設我完全不懂這個主題,請使用白話說明與簡單詞彙,給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句,最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答,並確保排版清晰易讀。`;
                 
                 const promises = [];
                 if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
@@ -417,7 +445,7 @@
                 
                 if (promises.length === 0) {
                     resultsContainer.innerHTML = '';
-                    displayResult('系統提示', '無法發送請求，因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
+                    displayResult('系統提示', '無法發送請求,因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
                     return;
                 }
 
@@ -427,7 +455,7 @@
                 results.forEach(result => {
                     if (result.isError) {
                         displayResult(result.model, result.content, true);
-                    } else if (result.model === 'Perplexity Sonar Reasoning') {
+                    } else if (result.model === 'Perplexity Sonar Reasoning Pro') {
                         displayPerplexityResult(result.content.choices[0].message, result.content);
                     } else {
                         displayResult(result.model, result.content, false);
@@ -450,7 +478,6 @@
             }
         });
         
-        // --- 顯示結果函式 (修改後) ---
         function createResultCard(modelName, innerHTML, isError = false) {
             const card = document.createElement('div');
             card.className = 'result-card';
@@ -508,10 +535,9 @@
             }
             
             const contentHTML = `<div class="content-body">${marked.parse(content) + citationsListHtml}</div>`;
-            createResultCard('Perplexity Sonar Reasoning', contentHTML);
+            createResultCard('Perplexity Sonar Reasoning Pro', contentHTML);
         }
 
-        // --- 複製到剪貼簿功能 ---
         resultsContainer.addEventListener('click', function(e) {
             if (e.target.classList.contains('copy-btn')) {
                 const copyButton = e.target;
@@ -536,7 +562,6 @@
                     });
                 }
                 
-                // --- 修改後的複製文案 ---
                 const textToCopy = `【${title}】\n經文：${currentReference}\n\n${plainText}${sourcesText}\n---\n由「多AI專業解經系統」生成\nhttps://tokpmpm.github.io/AI-bible/index.html`;
 
                 navigator.clipboard.writeText(textToCopy).then(() => {
@@ -567,7 +592,7 @@
 
         async function callChatGPT(prompt, apiKey) { return callAPI('ChatGPT 5 Nano', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-4o", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
         async function callGemini(prompt, apiKey) { return callAPI('Gemini 2.5 Pro', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
-        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
+        async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning Pro', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
         
         populateBooks();
         loadLastSelection();
