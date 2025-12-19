@@ -811,7 +811,7 @@
                 }
             }
 
-            async function callChatGPT(prompt, apiKey) { return callAPI('GPT-5 mini', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-5-mini", messages: [{ role: "user", content: prompt }], temperature: 0.7 }) }, (data) => data.choices[0].message.content); }
+            async function callChatGPT(prompt, apiKey) { return callAPI('GPT-5 mini', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-5-mini", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content); }
             async function callGemini(prompt, apiKey) { return callAPI('Gemini 3 Flash Preview', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
             async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning Pro', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
 
