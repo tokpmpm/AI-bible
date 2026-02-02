@@ -811,9 +811,29 @@
                 }
             }
 
-            async function callChatGPT(prompt, apiKey) { return callAPI('GPT-5 mini', 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-5-mini", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content); }
-            async function callGemini(prompt, apiKey) { return callAPI('Gemini 3 Flash Preview', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text); }
-            async function callPerplexity(prompt, apiKey) { return callAPI('Perplexity Sonar Reasoning Pro', 'https://api.perplexity.ai/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; }); }
+            // 請將此處替換為您的 Cloudflare Worker 網址
+            // 例如: const PROXY_BASE_URL = "https://ai-bible-proxy.您的帳號.workers.dev";
+            // 如果留空，則會嘗試直接連線 (可能會遇到 CORS 錯誤)
+            const PROXY_BASE_URL = "https://ai-bible-proxy.tokpmpm.workers.dev";
+
+            async function callChatGPT(prompt, apiKey) {
+                const url = PROXY_BASE_URL
+                    ? `${PROXY_BASE_URL}?target=openai`
+                    : 'https://api.openai.com/v1/chat/completions';
+                return callAPI('GPT-5 mini', url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-5-mini", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content);
+            }
+            async function callGemini(prompt, apiKey) {
+                const url = PROXY_BASE_URL
+                    ? `${PROXY_BASE_URL}?target=gemini`
+                    : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
+                return callAPI('Gemini 3 Flash Preview', url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text);
+            }
+            async function callPerplexity(prompt, apiKey) {
+                const url = PROXY_BASE_URL
+                    ? `${PROXY_BASE_URL}?target=perplexity`
+                    : 'https://api.perplexity.ai/chat/completions';
+                return callAPI('Perplexity Sonar Reasoning Pro', url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; });
+            }
 
             populateBooks();
             loadLastSelection();
