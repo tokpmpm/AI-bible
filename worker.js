@@ -1,27 +1,43 @@
 /**
  * Cloudflare Worker Proxy for AI APIs
  * 
- * 部署說明：
- * 1. 登入 Cloudflare Dashboard -> Workers & Pages -> Create Application -> Create Worker
- * 2. 命名您的 Worker (例如: ai-bible-proxy)
- * 3. 點擊 "Deploy"
- * 4. 點擊 "Edit code"
- * 5. 將此檔案的全部內容複製貼上，覆蓋原有的 worker.js
- * 6. 點擊 "Deploy"
- * 7. 記下您的 Worker URL (例如: https://ai-bible-proxy.您的帳號.workers.dev)
+ * API 金鑰存放在 Worker 環境變數 (Secrets) 中，前端不需要傳送金鑰。
+ * 
+ * 環境變數設定：
+ * 1. 登入 Cloudflare Dashboard -> Workers & Pages -> ai-bible-proxy
+ * 2. Settings -> Variables -> Add Variable (記得點 Encrypt)
+ * 3. 新增以下三個 Secret:
+ *    - OPENAI_API_KEY
+ *    - GEMINI_API_KEY
+ *    - PERPLEXITY_API_KEY
  */
+
+const ALLOWED_ORIGINS = [
+  "https://tokpmpm.github.io",
+  "http://localhost",
+  "http://127.0.0.1",
+];
+
+function isOriginAllowed(origin) {
+  if (!origin) return false;
+  return ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed));
+}
+
+function corsHeaders(origin) {
+  return {
+    "Access-Control-Allow-Origin": isOriginAllowed(origin) ? origin : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
 
 export default {
   async fetch(request, env, ctx) {
-    // 處理 CORS Preflight 請求 (瀏覽器會先發送 OPTIONS 請求來確認權限)
+    const origin = request.headers.get("Origin") || "";
+
+    // 處理 CORS Preflight 請求
     if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*", // 允許所有來源，或修改為您的 GitHub Pages 網址
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, x-goog-api-key, Authorization",
-        },
-      });
+      return new Response(null, { headers: corsHeaders(origin) });
     }
 
     if (request.method !== "POST") {
@@ -32,50 +48,72 @@ export default {
     const target = url.searchParams.get("target");
 
     let apiUrl = "";
-    
-    // 根據 target 參數決定轉發到哪個 API
+    let authHeaders = {};
+
+    // 根據 target 參數決定轉發到哪個 API，並從環境變數取得對應的 API Key
     if (target === "openai") {
+      if (!env.OPENAI_API_KEY) {
+        return new Response(JSON.stringify({ error: "OPENAI_API_KEY not configured in Worker" }), {
+          status: 500, headers: { "Content-Type": "application/json", ...corsHeaders(origin) }
+        });
+      }
       apiUrl = "https://api.openai.com/v1/chat/completions";
+      authHeaders = { "Authorization": `Bearer ${env.OPENAI_API_KEY}` };
+
     } else if (target === "gemini") {
+      if (!env.GEMINI_API_KEY) {
+        return new Response(JSON.stringify({ error: "GEMINI_API_KEY not configured in Worker" }), {
+          status: 500, headers: { "Content-Type": "application/json", ...corsHeaders(origin) }
+        });
+      }
       apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent";
+      authHeaders = { "x-goog-api-key": env.GEMINI_API_KEY };
+
     } else if (target === "perplexity") {
+      if (!env.PERPLEXITY_API_KEY) {
+        return new Response(JSON.stringify({ error: "PERPLEXITY_API_KEY not configured in Worker" }), {
+          status: 500, headers: { "Content-Type": "application/json", ...corsHeaders(origin) }
+        });
+      }
       apiUrl = "https://api.perplexity.ai/chat/completions";
+      authHeaders = { "Authorization": `Bearer ${env.PERPLEXITY_API_KEY}` };
+
     } else {
-      return new Response("Invalid target parameter. Use ?target=openai, ?target=gemini, or ?target=perplexity", { status: 400 });
+      return new Response("Invalid target parameter. Use ?target=openai, ?target=gemini, or ?target=perplexity", {
+        status: 400, headers: corsHeaders(origin)
+      });
     }
 
     try {
-      // 複製原始請求的內容
       const body = await request.text();
-      const headers = new Headers(request.headers);
-      
-      // 確保 Host header 是正確的目標 API，而不是 Worker 本身
-      headers.delete("Host");
 
-      // 發送請求到目標 API
+      // 發送請求到目標 API — Worker 自行帶上 API Key
       const response = await fetch(apiUrl, {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: body,
       });
 
-      // 取得回應並加上 CORS header 回傳給前端
       const responseBody = await response.text();
-      const responseHeaders = new Headers(response.headers);
-      responseHeaders.set("Access-Control-Allow-Origin", "*");
 
       return new Response(responseBody, {
         status: response.status,
         statusText: response.statusText,
-        headers: responseHeaders,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders(origin),
+        },
       });
 
     } catch (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*" 
+          ...corsHeaders(origin),
         },
       });
     }

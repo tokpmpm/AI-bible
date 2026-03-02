@@ -1,10 +1,8 @@
-# deploy.yml
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -17,27 +15,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Create config.js from Secrets 🤫
-        run: |
-          echo "window.APP_CONFIG = {" > config.js
-          echo "  OPENAI_API_KEY: '${{ secrets.VITE_OPENAI_API_KEY }}'," >> config.js
-          echo "  GEMINI_API_KEY: '${{ secrets.VITE_GEMINI_API_KEY }}'," >> config.js
-          echo "  PERPLEXITY_API_KEY: '${{ secrets.VITE_PERPLEXITY_API_KEY }}'" >> config.js
-          echo "};" >> config.js
-          
+
       - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
+        uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
-          
-      - name: Deploy to GitHub Pages 🚀
+
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4

@@ -410,7 +410,6 @@
 
     <button id="go-to-top-btn" title="回到最上頁">&#8679;</button>
 
-    <script src="config.js" defer></script>
     <script src="bible-data.js" defer></script>
 
     <script>
@@ -644,9 +643,6 @@
                         currentReference = `${bookName} ${startChapterNum}:${startVerseNum}-${endChapterNum}:${endVerseNum}`;
                     }
 
-                    const ownerKeys = typeof window.APP_CONFIG !== 'undefined' ? window.APP_CONFIG : {};
-                    const { OPENAI_API_KEY: openAIKey, GEMINI_API_KEY: geminiKey, PERPLEXITY_API_KEY: perplexityKey } = ownerKeys;
-
                     const useChatGPT = document.getElementById('use-chatgpt').checked;
                     const useGemini = document.getElementById('use-gemini').checked;
                     const usePerplexity = document.getElementById('use-perplexity').checked;
@@ -660,15 +656,9 @@
                     const prompt = `你是一位精通神學、聖經歷史和原文解經的專家。請針對以下經文章節進行深入解析：\n\n【章節】：${currentReference}\n\n請對 **${currentReference}** 進行分析,並依照以下結構回答：\n1. **核心概念與術語解釋**：請用初信者及聖經中階讀者也能聽懂的方式,解釋本章中核心的關鍵概念與術語。\n2. **現代生活應用**：並告知在現代中可以做出來的案例,假設我完全不懂這個主題,請使用白話說明與簡單詞彙,給予生動的比喻與生活例子。\n3. **上下文脈絡**：這段經文在整章、整卷書中的位置和作用是什麼？它與前後文的關聯為何？\n4. **本章經典經句與總結**：列出此段的經典經句,最後總結從這些經文可以学到什麼。\n\n請用繁體中文回答,並確保排版清晰易讀。`;
 
                     const promises = [];
-                    if (useChatGPT && openAIKey) promises.push(callChatGPT(prompt, openAIKey));
-                    if (useGemini && geminiKey) promises.push(callGemini(prompt, geminiKey));
-                    if (usePerplexity && perplexityKey) promises.push(callPerplexity(prompt, perplexityKey));
-
-                    if (promises.length === 0) {
-                        resultsContainer.innerHTML = '';
-                        displayResult('系統提示', '無法發送請求,因為缺少必要的 API 金鑰設定。請網站管理員檢查 GitHub Secrets 設定。', true);
-                        return;
-                    }
+                    if (useChatGPT) promises.push(callChatGPT(prompt));
+                    if (useGemini) promises.push(callGemini(prompt));
+                    if (usePerplexity) promises.push(callPerplexity(prompt));
 
                     const results = await Promise.all(promises);
 
@@ -811,28 +801,16 @@
                 }
             }
 
-            // 請將此處替換為您的 Cloudflare Worker 網址
-            // 例如: const PROXY_BASE_URL = "https://ai-bible-proxy.您的帳號.workers.dev";
-            // 如果留空，則會嘗試直接連線 (可能會遇到 CORS 錯誤)
             const PROXY_BASE_URL = "https://ai-bible-proxy.tokpmpm.workers.dev";
 
-            async function callChatGPT(prompt, apiKey) {
-                const url = PROXY_BASE_URL
-                    ? `${PROXY_BASE_URL}?target=openai`
-                    : 'https://api.openai.com/v1/chat/completions';
-                return callAPI('GPT-5 mini', url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "gpt-5-mini", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content);
+            async function callChatGPT(prompt) {
+                return callAPI('GPT-5 mini', `${PROXY_BASE_URL}?target=openai`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: "gpt-5-mini", messages: [{ role: "user", content: prompt }] }) }, (data) => data.choices[0].message.content);
             }
-            async function callGemini(prompt, apiKey) {
-                const url = PROXY_BASE_URL
-                    ? `${PROXY_BASE_URL}?target=gemini`
-                    : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
-                return callAPI('Gemini 3 Flash Preview', url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text);
+            async function callGemini(prompt) {
+                return callAPI('Gemini 3 Flash Preview', `${PROXY_BASE_URL}?target=gemini`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }, (data) => data.candidates[0].content.parts[0].text);
             }
-            async function callPerplexity(prompt, apiKey) {
-                const url = PROXY_BASE_URL
-                    ? `${PROXY_BASE_URL}?target=perplexity`
-                    : 'https://api.perplexity.ai/chat/completions';
-                return callAPI('Perplexity Sonar Reasoning Pro', url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: JSON.stringify({ model: "sonar-reasoning-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; });
+            async function callPerplexity(prompt) {
+                return callAPI('Perplexity Sonar Reasoning Pro', `${PROXY_BASE_URL}?target=perplexity`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: "sonar-reasoning-pro", messages: [{ role: "user", content: prompt }] }) }, (data) => { return data; });
             }
 
             populateBooks();
